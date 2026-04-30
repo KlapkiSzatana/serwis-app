@@ -40,6 +40,7 @@ yay -S serwis-app
 lub
 ```bash
 paru -S serwis-app
+```
    
 ## 📂 Struktura Projektu
 serwis-app.py – Główny plik uruchomieniowy.
