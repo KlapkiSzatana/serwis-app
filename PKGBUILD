@@ -17,7 +17,7 @@ source=("serwis-app.py"
 
 # Teraz updpkgsums zadziała, bo widzi tylko te 3 pliki
 sha256sums=('931768dcdbb4e2cb91ed02a823fe8961fcca45265b2a940dc0c59789faceab60'
-            'd97eac85821ff29650c1d517ba843d91948d7f85bfcec2c552e1e093f90a4111'
+            '9526fdc68baa6a9445ae59a91f633a73c5787a416d99c89085b222d6e5804e0e'
             'fb0a5349e2be3d9fc051c0768c03a30008fd422025eddc838c05b4d9d5af0c03')
 
 package() {
