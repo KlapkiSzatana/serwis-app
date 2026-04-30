@@ -1,10 +1,18 @@
 [Setup]
 AppName=SerwisApp
 AppVersion=2.3.0
-; Instalacja w AppData użytkownika w folderze Heisenberg\SerwisApp
+AppVerName=SerwisApp 2.3.0
+AppPublisher=KlapkiSzatana
+AppPublisherURL=https://github.com/KlapkiSzatana/serwis-app
+AppSupportURL=https://github.com/KlapkiSzatana/serwis-app
 DefaultDirName={userappdata}\KlapkiSzatana\SerwisApp
 DefaultGroupName=SerwisApp
 UninstallDisplayIcon={app}\serwis-app.exe
+UninstallDisplayName=SerwisApp 2.3.0 - Proste Prowadzenie Serwisu (2026)
+VersionInfoCompany=KlapkiSzatana
+VersionInfoDescription=Proste Prowadzenie Serwisu
+VersionInfoCopyright=Copyright (c) 2026 KlapkiSzatana
+VersionInfoVersion=2.3.0.0
 Compression=lzma
 SolidCompression=yes
 OutputDir=user_setup

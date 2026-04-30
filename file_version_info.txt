@@ -9,7 +9,7 @@ VSVersionInfo(
     OS=0x40004,
     fileType=0x1,
     subtype=0x0,
-    date=(0, 0)
+    date=(2026, 4)
     ),
   kids=[
     StringFileInfo(
@@ -20,7 +20,7 @@ VSVersionInfo(
         StringStruct('FileDescription', 'Proste Prowadzenie Serwisu'),
         StringStruct('FileVersion', '2.3.0'),
         StringStruct('InternalName', 'serwis-app'),
-        StringStruct('LegalCopyright', '© 2026 GPL-3.0 License'),
+        StringStruct('LegalCopyright', '© 2026 KlapkiSzatana'),
         StringStruct('OriginalFilename', 'serwis-app.exe'),
         StringStruct('ProductName', 'SerwisApp'),
         StringStruct('ProductVersion', '2.3.0')])

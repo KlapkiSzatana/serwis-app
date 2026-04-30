@@ -50,7 +50,7 @@ jobs:
               --add-data "ui;ui" \
               --add-data "resources;resources" \
               --version-file "file_version_info.txt" \
-              --icon "icon.ico" \
+              --icon "serwisapp.ico" \
               --name "serwis-app" \
               serwis-app.py
 
@@ -90,7 +90,4 @@ jobs:
             dist/SerwisApp_macos
           body: |
             ## Zmiany w tej wersji:
-            - Wdrożono instalator w katalogu użytkownika z pełnym deinstalatorem dla Windowsa.
-            - Aplikacja Windows działa w trybie standalone dla szybszego uruchamiania.
-            - Spakowano wszystkie wymagane zasoby i moduły.
-            - Poprawka w dodawaniu logo firmy
+            - Poprawiono instalator (dodano więcej informacji) i ikonki dla Windowsa.
