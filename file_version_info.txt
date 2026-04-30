@@ -28,3 +28,4 @@ VSVersionInfo(
     VarFileInfo([VarStruct('Translation', [1045, 1200])]) # 1045 = Polski
   ]
 )
+

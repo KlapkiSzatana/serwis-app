@@ -91,3 +91,4 @@ jobs:
           body: |
             ## Zmiany w tej wersji:
             - Poprawiono instalator (dodano więcej informacji) i ikonki dla Windowsa.
+

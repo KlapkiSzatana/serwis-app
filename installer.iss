@@ -33,3 +33,4 @@ Name: "desktopicon"; Description: "Stwórz skrót na pulpicie"; GroupDescription
 
 [Run]
 Filename: "{app}\serwis-app.exe"; Description: "Uruchom SerwisApp po zakończeniu"; Flags: nowait postinstall skipifsilent
+
