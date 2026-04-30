@@ -11,7 +11,7 @@
 - [Dostępne również na Windows i macOS](#dostępne-również-na-windows-i-macos)
 - [Licencja](#licencja)
 
-## ✨ Główne Funkcje
+## Główne Funkcje
 
 *   **Zarządzanie Zleceniami:** Pełna historia napraw, statusy zleceń oraz baza klientów.
 *   **Projektant Wydruku (WYSIWYG):** Nowoczesny, wizualny edytor szablonów (Potwierdzenia przyjęcia, Raporty naprawy).
@@ -20,7 +20,7 @@
 *   **Personalizacja:** Możliwość wstawienia własnego logo, danych firmy oraz edycji regulaminów (RODO).
 *   **Technologia:** Zbudowane w oparciu o Python 3 oraz stabilną bibliotekę GUI – PySide6.
 
-## 🚀 Instalacja (Arch Linux)
+## Instalacja (Arch Linux)
 
 Projekt jest przygotowany do pracy na systemie Arch Linux i zawiera gotowy plik `PKGBUILD`.
 
@@ -35,7 +35,7 @@ Projekt jest przygotowany do pracy na systemie Arch Linux i zawiera gotowy plik 
    ```
    Komenda ta automatycznie pobierze wymagane zależności (PySide6, Pillow, Cryptography) i skonfiguruje skrót w menu systemowym.
    
-## 🐧 Instalacja (Arch z AUR)
+## Instalacja (Arch z AUR)
 
 Aplikację można łatwo zainstalować z repozytorium **AUR (Arch User Repository)**.
 
@@ -51,7 +51,7 @@ lub
 paru -S serwis-app
 ```
    
-## 📂 Struktura Projektu
+## Struktura Projektu
 serwis-app.py – Główny plik uruchomieniowy.
 
 modules/ – Logika biznesowa (drukowanie, baza danych, backupy).
@@ -62,7 +62,7 @@ actions/ – Zasoby graficzne (ikony, przyciski).
 
 fonts/ – Niezbędne czcionki do poprawnego generowania wydruków.
 
-## 🛠️ Wymagania (Dependencies)
+## Wymagania (Dependencies)
 Aplikacja wymaga Pythona w wersji 3.10+ oraz następujących bibliotek:
 
 python-pyside6
@@ -82,7 +82,7 @@ python-barcode (opcjonalnie, dla kodów kreskowych)
 - [Pobierz dla Windows (Instalator)](https://github.com/KlapkiSzatana/serwis-app/releases/latest/download/BudgetApp_Setup.exe)
 - [Pobierz dla macOS](https://github.com/KlapkiSzatana/serwis-app/releases/latest/download/SerwisApp_macos.dmg)
 
-## 📝 Licencja
+## Licencja
 Projekt udostępniany na licencji GPL-3.0.
 
 Autor: KlapkiSzatana
