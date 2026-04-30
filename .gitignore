@@ -1,0 +1,5 @@
+__pycache__/
+*.db
+*.pkg.tar.zst
+src/
+pkg/
