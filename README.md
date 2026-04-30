@@ -3,13 +3,13 @@
 **SerwisApp** to kompleksowe oprogramowanie do zarządzania serwisem elektronicznym i komputerowym. Aplikacja pozwala na pełną kontrolę nad procesem naprawy – od przyjęcia sprzętu, przez dokumentację techniczną, aż po rozliczenie i wydanie urządzenia klientowi.
 
 ### Spis treści
-- [Główne Funkcje](#-główne-funkcje)
-- [Instalacja (Arch Linux)](#-instalacja-arch-linux)
-- [Instalacja (Arch z AUR)](#-instalacja-arch-z-aur)
-- [Struktura Projektu](#-struktura-projektu)
-- [Wymagania (Dependencies)](#-wymagania-dependencies)
-- [Dostępne również na Windows i macOS](#-dostępne-również-na-windows-i-macos)
-- [Licencja](#-licencja)
+- [Główne Funkcje](#główne-funkcje)
+- [Instalacja (Arch Linux)](#instalacja-arch-linux)
+- [Instalacja (Arch z AUR)](#instalacja-arch-z-aur)
+- [Struktura Projektu](#struktura-projektu)
+- [Wymagania (Dependencies)](#wymagania-dependencies)
+- [Dostępne również na Windows i macOS](#dostępne-również-na-windows-i-macos)
+- [Licencja](#licencja)
 
 ## ✨ Główne Funkcje
 
