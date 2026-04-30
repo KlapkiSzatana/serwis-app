@@ -55,7 +55,7 @@ python-barcode (opcjonalnie, dla kodów kreskowych)
 ### Pobierz najnowszą wersję:
 
 - [Pobierz dla Windows (Instalator)](https://github.com/KlapkiSzatana/serwis-app/releases/latest/download/BudgetApp_Setup.exe)
-- [Pobierz dla macOS](https://github.com/KlapkiSzatana/serwis-app/releases/latest/download/BudgetApp_macos)
+- [Pobierz dla macOS](https://github.com/KlapkiSzatana/serwis-app/releases/latest/download/SerwisApp_macos)
 
 ## 📝 Licencja
 Projekt udostępniany na licencji GPL-3.0.
