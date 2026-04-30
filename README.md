@@ -26,6 +26,21 @@ Projekt jest przygotowany do pracy na systemie Arch Linux i zawiera gotowy plik 
    ```
    Komenda ta automatycznie pobierze wymagane zależności (PySide6, Pillow, Cryptography) i skonfiguruje skrót w menu systemowym.
    
+## 🐧 Instalacja (Arch z AUR)
+
+Aplikację można łatwo zainstalować z repozytorium **AUR (Arch User Repository)**.
+
+### Szybka instalacja (zalecana)
+
+Jeśli używasz pomocnika AUR (np. `yay` lub `paru`), wpisz w terminalu:
+
+```bash
+yay -S serwis-app
+```
+lub
+```bash
+paru -S serwis-app
+   
 ## 📂 Struktura Projektu
 serwis-app.py – Główny plik uruchomieniowy.
 
