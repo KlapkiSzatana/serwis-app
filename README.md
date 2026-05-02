@@ -77,6 +77,10 @@ python-barcode (opcjonalnie, dla kodów kreskowych)
 
 ## Dostępne również na Windows i MacOS
 
+Wersje aplikacji na macOS oraz Windows są automatycznie kompilowane i publikowane przy użyciu GitHub Actions. Dzięki temu proces budowania pozostaje spójny i w pełni zautomatyzowany dla tych platform.
+
+Głównym środowiskiem rozwoju oraz docelową platformą projektu pozostaje jednak **Arch Linux** — to na nim skupia się podstawowy nurt rozwoju i testowania.
+
 ### Pobierz najnowszą wersję:
 
 - [Pobierz dla Windows (Instalator)](https://github.com/KlapkiSzatana/serwis-app/releases/latest/download/BudgetApp_Setup.exe)
