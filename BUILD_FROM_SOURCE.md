@@ -150,7 +150,7 @@ fpm -s dir -t deb \
   --license "GPL-3.0" \
   --url "https://github.com/KlapkiSzatana/serwis-app" \
   --maintainer "KlapkiSzatana" \
-  --description "Kompleksowe zarządzanie serwisem" \
+  --description "Proste Prowadzenie Serwisu" \
   --prefix / \
   -C build/package-root \
   -p build/packages \
@@ -172,7 +172,7 @@ fpm -s dir -t rpm \
   --license "GPL-3.0" \
   --url "https://github.com/KlapkiSzatana/serwis-app" \
   --maintainer "KlapkiSzatana" \
-  --description "Kompleksowe zarządzanie serwisem" \
+  --description "Proste Prowadzenie Serwisu" \
   --prefix / \
   -C build/package-root \
   -p build/packages \
