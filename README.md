@@ -83,7 +83,7 @@ Głównym środowiskiem rozwoju oraz docelową platformą projektu pozostaje jed
 
 ### Pobierz najnowszą wersję:
 
-- [Pobierz dla Windows (Instalator)](https://github.com/KlapkiSzatana/serwis-app/releases/latest/download/BudgetApp_Setup.exe)
+- [Pobierz dla Windows (Instalator)](https://github.com/KlapkiSzatana/serwis-app/releases/latest/download/SerwisApp_Setup.exe)
 - [Pobierz dla macOS](https://github.com/KlapkiSzatana/serwis-app/releases/latest/download/SerwisApp_macos.dmg)
 
 ## Licencja
