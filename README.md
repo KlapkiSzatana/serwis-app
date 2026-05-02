@@ -4,6 +4,7 @@
 
 ### Spis treści
 - [Główne Funkcje](#główne-funkcje)
+- [Budowa ze źródeł](#budowa-ze-źródeł)
 - [Instalacja (Arch Linux)](#instalacja-arch-linux)
 - [Instalacja (Arch z AUR)](#instalacja-arch-z-aur)
 - [Struktura Projektu](#struktura-projektu)
@@ -19,6 +20,10 @@
 *   **Bezpieczeństwo:** Ochrona hasłem, system kopii zapasowych (backup) oraz szyfrowanie danych.
 *   **Personalizacja:** Możliwość wstawienia własnego logo, danych firmy oraz edycji regulaminów (RODO).
 *   **Technologia:** Zbudowane w oparciu o Python 3 oraz stabilną bibliotekę GUI – PySide6.
+
+## Budowa ze źródeł
+
+Pełna instrukcja budowy lokalnej wersji developerskiej, binarki Linux oraz paczek `.deb` i `.rpm` znajduje się w [BUILD_FROM_SOURCE.md](BUILD_FROM_SOURCE.md).
 
 ## Instalacja (Arch Linux)
 
