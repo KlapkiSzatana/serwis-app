@@ -1,4 +1,4 @@
-# Maintainer: Heisenberg (KlapkiSzatana)
+# Maintainer: KlapkiSzatana
 pkgname=serwis-app
 pkgver=2.3.1
 pkgrel=1
