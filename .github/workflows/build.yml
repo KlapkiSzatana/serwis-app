@@ -93,7 +93,4 @@ jobs:
             dist/SerwisApp_macos.dmg
           body: |
             ## Zmiany w tej wersji:
-            - Wdrożono instalator w katalogu użytkownika z pełnym deinstalatorem dla Windowsa.
-            - Aplikacja działa w trybie standalone dla szybszego uruchamiania.
-            - Spakowano wszystkie wymagane zasoby i moduły.
-            - Dla systemu macOS aplikacja została spakowana do instalatora w formacie DMG (SerwisApp_macos.dmg) z wykorzystaniem ikony w formacie .icns.
+            - W belce tytułowej powielona nazwa aplikacji - usunięto.

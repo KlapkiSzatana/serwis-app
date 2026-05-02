@@ -339,9 +339,7 @@ QtCore.QCoreApplication.setApplicationName("serwis-app")
 
 app = QtWidgets.QApplication(sys.argv)
 
-# 3. To jest KLUCZOWE dla powiązania z plikiem .desktop
 app.setDesktopFileName("serwis-app")
-app.setApplicationDisplayName("SerwisApp")
 
 translator = QTranslator()
 locale_sys = QLocale.system().name()
@@ -349,7 +347,7 @@ qt_translations_path = QLibraryInfo.path(QLibraryInfo.TranslationsPath)
 translator.load(f"qt_{locale_sys}", qt_translations_path)
 app.installTranslator(translator)
 
-startup_popup.show_startup_if_needed() # ZOSTAWIONE ZGODNIE Z PROŚBĄ
+startup_popup.show_startup_if_needed()
 
 main_window = SerwisAppWindow()
 ui = main_window.ui
@@ -362,12 +360,10 @@ shortcut_delete.activated.connect(ui.pushButtonNew_del.click)
 shortcut_ctrl_p = QShortcut(QKeySequence("Ctrl+P"), main_window)
 shortcut_ctrl_p.activated.connect(ui.pushButtonNew_print.click)
 shortcut_refresh.activated.connect(lambda: odswiez_tabele_z_filtrami())
-shortcut_enter = QShortcut(QKeySequence("Return"), main_window)  # "Return" = Enter
+shortcut_enter = QShortcut(QKeySequence("Return"), main_window)
 shortcut_enter.activated.connect(lambda: pokaz_szczegoly(conn, c, ui.tableView.selectionModel().currentIndex(), ui.tableView.model()))
 ui.pushButtonNew_ref.clicked.connect(lambda: odswiez_tabele_z_filtrami())
 main_window.show()
-
-# USUNIĘTO: ui.actionversion.triggered (manualne sprawdzanie wersji)
 
 ui.actionDaneFirmy.triggered.connect(lambda: edytuj_dane_firmy(main_window, conn))
 
@@ -382,7 +378,6 @@ current_date_filter = {
     "to": None
 }
 
-# 3. Ustawiamy tekst przycisku na aktualny rok (np. "2025")
 ui.pushButtonNew_filter.setText(obecny_rok)
 
 main_window.setWindowTitle(f"SerwisApp - {config.APP_VERSION} {config.APP_NAME}")
@@ -880,7 +875,6 @@ def on_baza_clicked():
 curr_year = datetime.date.today().year
 year_str = f"2025-{curr_year}" if curr_year > 2025 else "2025"
 
-# Tworzymy etykietę (dodałem spację przed rokiem dla czytelności)
 copyright_label = QtWidgets.QLabel(f"© KlapkiSzatana {year_str}")
 font = QtGui.QFont()
 font.setPointSize(8)
@@ -891,8 +885,6 @@ ui.statusbar.addPermanentWidget(copyright_label)
 
 ui.pushButtonNew_baza.clicked.connect(on_baza_clicked)
 
-
-# Ładowanie ikony (musi być plik tysiac.png obok skryptu)
 app.setWindowIcon(QIcon(icon_path))
 main_window.show()
 sys.exit(app.exec())

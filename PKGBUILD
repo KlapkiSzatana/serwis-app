@@ -1,6 +1,6 @@
 # Maintainer: Heisenberg (KlapkiSzatana)
 pkgname=serwis-app
-pkgver=2.3.0
+pkgver=2.3.1
 pkgrel=1
 pkgdesc="Proste Prowadzenie Serwisu - Kompleksowe zarządzanie serwisem"
 arch=('any')
@@ -16,7 +16,7 @@ source=("serwis-app.py"
         "icon.png")
 
 # Teraz updpkgsums zadziała, bo widzi tylko te 3 pliki
-sha256sums=('931768dcdbb4e2cb91ed02a823fe8961fcca45265b2a940dc0c59789faceab60'
+sha256sums=('4ec770445bcafbc733f7d421cf6f5df2706ae1b2b904c4c204ad1e2c713b0bb7'
             '9526fdc68baa6a9445ae59a91f633a73c5787a416d99c89085b222d6e5804e0e'
             'fb0a5349e2be3d9fc051c0768c03a30008fd422025eddc838c05b4d9d5af0c03')
 
