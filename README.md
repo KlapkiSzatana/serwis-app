@@ -25,36 +25,109 @@
 
 Pełna instrukcja budowy lokalnej wersji developerskiej, binarki Linux oraz paczek `.deb` i `.rpm` znajduje się w [BUILD_FROM_SOURCE.md](BUILD_FROM_SOURCE.md).
 
-## Instalacja (Arch Linux)
+# Instalacja (Arch Linux i pochodne)
 
-Projekt jest przygotowany do pracy na systemie Arch Linux i zawiera gotowy plik `PKGBUILD`.
+Aplikacja jest dostępna w AUR w dwóch wersjach.  
+Wybierz jedną z poniższych metod:
 
-1. **Pobierz repozytorium:**
-   ```bash
-   git clone https://github.com/KlapkiSzatana/serwis-app.git
-   cd serwis-app
-   ```
-2. **Zbuduj i zainstaluj paczkę:**
-   ```bash
-   makepkg -si
-   ```
-   Komenda ta automatycznie pobierze wymagane zależności (PySide6, Pillow, Cryptography) i skonfiguruje skrót w menu systemowym.
-   
-## Instalacja (Arch z AUR)
+---
 
-Aplikację można łatwo zainstalować z repozytorium **AUR (Arch User Repository)**.
+### OPCJA A: Szybka instalacja – Gotowa binarka
 
-### Szybka instalacja (zalecana)
+Instalujesz gotowy program.  
+Nie potrzebujesz Pythona, bibliotek ani kompilacji.
 
-Jeśli używasz pomocnika AUR (np. `yay` lub `paru`), wpisz w terminalu:
+Pobiera się i działa natychmiast.
+
+Jeśli używasz pomocnika AUR (`yay` lub `paru`), wpisz:
+
+```bash
+yay -S serwis-app-bin
+```
+
+lub
+
+```bash
+paru -S serwis-app-bin
+```
+
+---
+
+### OPCJA B: Instalacja ze źródeł
+
+Program buduje się bezpośrednio z kodu źródłowego.
+
+System automatycznie pobierze:
+- środowisko Python,
+- PySide6,
+- Pillow,
+- oraz wszystkie wymagane zależności.
+
+Jeśli używasz pomocnika AUR (`yay` lub `paru`), wpisz:
 
 ```bash
 yay -S serwis-app
 ```
+
 lub
+
 ```bash
 paru -S serwis-app
 ```
+
+---
+
+### OPCJA C: Ręczna instalacja przez PKGBUILD (Bez pomocników AUR)
+
+Jeśli nie używasz `yay` ani `paru`, możesz pobrać paczkę ręcznie i zbudować ją przez `makepkg`.
+
+### Wersja binarna
+
+```bash
+git clone https://aur.archlinux.org/serwis-app-bin.git
+cd serwis-app-bin
+makepkg -si
+```
+
+### Wersja ze źródła
+
+```bash
+git clone https://aur.archlinux.org/serwis-app.git
+cd serwis-app
+makepkg -si
+```
+
+---
+
+## Uruchamianie
+
+Po instalacji (niezależnie od wybranej opcji) aplikację uruchamiasz wpisując:
+
+```bash
+serwis-app
+```
+
+Możesz także uruchomić ją z menu aplikacji swojego środowiska graficznego.
+
+---
+
+## Odinstalowanie
+
+Aby całkowicie usunąć aplikację z systemu:
+
+### Wersja binarna (`-bin`)
+
+```bash
+sudo pacman -Rs serwis-app-bin
+```
+
+### Wersja ze źródła
+
+```bash
+sudo pacman -Rs serwis-app
+```
+
+---
    
 ## Struktura Projektu
 serwis-app.py – Główny plik uruchomieniowy.
