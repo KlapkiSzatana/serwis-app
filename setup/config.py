@@ -4,7 +4,7 @@ import sqlite3
 import sys
 import tempfile
 
-APP_VERSION = "2.3.1"
+APP_VERSION = "2.3.2"
 APP_NAME = ""
 APP_NAME2 = "SerwisApp"
 

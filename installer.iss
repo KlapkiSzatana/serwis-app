@@ -1,18 +1,18 @@
 [Setup]
 AppName=SerwisApp
-AppVersion=2.3.1
-AppVerName=SerwisApp 2.3.1
+AppVersion=2.3.2
+AppVerName=SerwisApp 2.3.2
 AppPublisher=KlapkiSzatana
 AppPublisherURL=https://github.com/KlapkiSzatana/serwis-app
 AppSupportURL=https://github.com/KlapkiSzatana/serwis-app
 DefaultDirName={userappdata}\KlapkiSzatana\SerwisApp
 DefaultGroupName=SerwisApp
 UninstallDisplayIcon={app}\serwis-app.exe
-UninstallDisplayName=SerwisApp 2.3.1 - Proste Prowadzenie Serwisu (2026)
+UninstallDisplayName=SerwisApp 2.3.2 - Proste Prowadzenie Serwisu
 VersionInfoCompany=KlapkiSzatana
 VersionInfoDescription=Proste Prowadzenie Serwisu
 VersionInfoCopyright=Copyright (c) 2026 KlapkiSzatana
-VersionInfoVersion=2.3.1.0
+VersionInfoVersion=2.3.2.0
 Compression=lzma
 SolidCompression=yes
 OutputDir=user_setup

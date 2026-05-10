@@ -20,10 +20,31 @@ jobs:
             artifact_name: SerwisApp_Setup.exe
           - os: macos-14
             artifact_name: SerwisApp_macos.dmg
+          - os: ubuntu-22.04
+            artifact_name: SerwisApp_linux.tar.gz
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      # Dla Linuksa instalujemy niezbędne biblioteki systemowe (wymagane m.in. dla Qt6/PySide6)
+      - name: Install Linux System Dependencies
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libegl1 \
+            libgl1-mesa-dev \
+            libxcb-xinerama0 \
+            libxcb-icccm4 \
+            libxcb-image0 \
+            libxcb-keysyms1 \
+            libxcb-randr0 \
+            libxcb-render-util0 \
+            libxcb-shape0 \
+            libxcb-xfixes0 \
+            libxkbcommon-x11-0 \
+            libdbus-1-3
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -63,7 +84,8 @@ jobs:
             rm -rf dist/serwis-app/
             rm -f dist/serwis-app.exe
             rm -f dist/serwis-app-windows.exe
-          else
+
+          elif [ "${{ matrix.os }}" == "macos-14" ]; then
             # 4. Dla macOS - budowanie w trybie --onedir i spakowanie do DMG
             python -m PyInstaller --noconfirm --onedir --windowed \
               --add-data "serwisapp.png:." \
@@ -82,6 +104,60 @@ jobs:
 
             # 5. Pakowanie folderu aplikacji do formatu .dmg
             hdiutil create -volname "SerwisApp" -srcfolder dist/SerwisApp.app -ov -format UDZO dist/SerwisApp_macos.dmg
+
+          elif [ "${{ matrix.os }}" == "ubuntu-22.04" ]; then
+            # 6. Dla Linux - budowanie w trybie --onedir (tworzy katalog SerwisApp z binarką i zależnościami)
+            python -m PyInstaller --noconfirm --onedir --windowed \
+              --add-data "serwisapp.png:." \
+              --add-data "icon.png:." \
+              --add-data "actions:actions" \
+              --add-data "fonts:fonts" \
+              --add-data "modules:modules" \
+              --add-data "setup:setup" \
+              --add-data "ui:ui" \
+              --add-data "resources:resources" \
+              --name "SerwisApp" \
+              serwis-app.py
+
+            # USUWANIE PROBLEMATYCZNYCH BIBLIOTEK SYSTEMOWYCH
+            # 1. Usuwamy readline (rozwiązuje błąd rl_trim_arg_from_keyseq w /bin/sh)
+            rm -f dist/SerwisApp/_internal/libreadline.so*
+
+            # 2. Usuwamy standardowe biblioteki C/C++ (rozwiązuje błąd GLIBCXX w kde-open/xdg-open)
+            rm -f dist/SerwisApp/_internal/libstdc++.so*
+            rm -f dist/SerwisApp/_internal/libgcc_s.so*
+
+            mkdir -p linux-package
+
+            cp -r dist/SerwisApp linux-package/
+            cp serwisapp.png linux-package/
+            cp install.run linux-package/
+            cp uninstall.run linux-package/
+
+            chmod +x linux-package/install.run
+            chmod +x linux-package/uninstall.run
+
+            # Bezpieczny zapis pliku .desktop (wzorowany na PKGBUILD, bez błędów parsera macOS)
+            echo "[Desktop Entry]" > linux-package/SerwisApp.desktop
+            echo "Name=ServiceApp" >> linux-package/SerwisApp.desktop
+            echo "Name[pl]=SerwisApp" >> linux-package/SerwisApp.desktop
+            echo "Comment=Simple Service Management" >> linux-package/SerwisApp.desktop
+            echo "Comment[pl]=Proste Prowadzenie Serwisu" >> linux-package/SerwisApp.desktop
+            echo "Exec=/opt/SerwisApp/SerwisApp/SerwisApp" >> linux-package/SerwisApp.desktop
+            echo "Icon=/opt/SerwisApp/serwisapp.png" >> linux-package/SerwisApp.desktop
+            echo "Terminal=false" >> linux-package/SerwisApp.desktop
+            echo "Type=Application" >> linux-package/SerwisApp.desktop
+            echo "Categories=Office;Utility;" >> linux-package/SerwisApp.desktop
+            echo "StartupWMClass=SerwisApp" >> linux-package/SerwisApp.desktop
+            echo "StartupNotify=true" >> linux-package/SerwisApp.desktop
+
+
+            chmod +x linux-package/SerwisApp.desktop
+
+
+            # Pakujemy cały folder linux-package do wymaganego archiwum
+
+            tar -czf SerwisApp_linux.tar.gz linux-package
           fi
 
       - name: Create Release and Upload
@@ -91,6 +167,7 @@ jobs:
           files: |
             dist/SerwisApp_Setup.exe
             dist/SerwisApp_macos.dmg
+            dist/SerwisApp_linux.tar.gz
           body: |
             ## Zmiany w tej wersji:
             - W belce tytułowej powielona nazwa aplikacji - usunięto.
