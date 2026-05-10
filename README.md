@@ -5,8 +5,7 @@
 ### Spis treści
 - [Główne Funkcje](#główne-funkcje)
 - [Budowa ze źródeł](#budowa-ze-źródeł)
-- [Instalacja (Arch Linux)](#instalacja-arch-linux)
-- [Instalacja (Arch z AUR)](#instalacja-arch-z-aur)
+- [Instalacja (Arch Linux)](#instalacja-arch-linux-i-pochodne)
 - [Struktura Projektu](#struktura-projektu)
 - [Wymagania (Dependencies)](#wymagania-dependencies)
 - [Dostępne również na Windows i macOS](#dostępne-również-na-windows-i-macos)
