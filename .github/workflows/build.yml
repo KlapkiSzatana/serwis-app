@@ -157,7 +157,7 @@ jobs:
 
             # Pakujemy cały folder linux-package do wymaganego archiwum
 
-            tar -czf SerwisApp_linux.tar.gz linux-package
+            tar -czf dist/SerwisApp_linux.tar.gz linux-package
           fi
 
       - name: Create Release and Upload
