@@ -25,6 +25,9 @@
 
 Pełna instrukcja budowy lokalnej wersji developerskiej, binarki Linux oraz paczek `.deb` i `.rpm` znajduje się w [BUILD_FROM_SOURCE.md](BUILD_FROM_SOURCE.md).
 
+## Znane Błędy!
+Lista znanych błędów znajduje się w [ZNANE_BŁĘDY.md](ZNANE_BŁĘDY.md).
+
 # Instalacja (Arch Linux i pochodne)
 
 Aplikacja jest dostępna w AUR w dwóch wersjach.  
