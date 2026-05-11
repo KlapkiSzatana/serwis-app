@@ -22,6 +22,8 @@
 *   **Personalizacja:** Możliwość wstawienia własnego logo, danych firmy oraz edycji regulaminów (RODO).
 *   **Technologia:** Zbudowane w oparciu o Python 3 oraz stabilną bibliotekę GUI – PySide6.
 
+### [CHANGELOG](CHANGELOG.md)
+
 ## Budowa ze źródeł
 
 Pełna instrukcja budowy lokalnej wersji developerskiej, binarki Linux oraz paczek `.deb` i `.rpm` znajduje się w [BUILD_FROM_SOURCE.md](BUILD_FROM_SOURCE.md).
