@@ -10,7 +10,7 @@ Format oparty o standard:
 
 ---
 
-# [2.4.0] - Planned
+# [3.0.0] - Planned
 
 ## ✨ Added
 - Planowane dodanie obsługi skrótów klawiaturowych w najważniejszych sekcjach aplikacji
