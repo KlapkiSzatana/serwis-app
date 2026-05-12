@@ -16,12 +16,15 @@ Format oparty o standard:
 - Planowane dodanie obsługi skrótów klawiaturowych w najważniejszych sekcjach aplikacji
 - Planowane dodanie możliwości szybkiego zgłaszania błędów bezpośrednio przez GitHub
 - Planowane usprawnienia i poprawki nowych komponentów wydruków i dokumentów
+- Planowane dodanie możliwości dodawania pozycji z cennika wraz z ceną
+- Planowane dodanie możliwości wyboru pozycji z cennika w edycji zlecenia
 
 ## 🔄 Changed
 - Planowane odświeżenie wyglądu stopki aplikacji
 - Planowane ujednolicenie oraz aktualizacja ikon interfejsu użytkownika
 - Planowane usprawnienia nawigacji i działania wybranych widoków
 - Planowana optymalizacja wydajności aplikacji
+- Planowane usprawnienie cennika
 
 ## ❌ Removed
 - Planowane usunięcie starego trybu wydruków
