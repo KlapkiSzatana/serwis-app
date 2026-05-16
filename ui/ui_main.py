@@ -3,7 +3,7 @@ import os
 from setup import config
 import sqlite3
 from PySide6 import QtCore, QtGui, QtWidgets
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import QApplication
 from modules.button import MyPushButton
 from PySide6.QtCore import QUrl
@@ -12,22 +12,214 @@ from modules.pomoc import pokaz_wsparcie
 from modules.pokaz_info import pokaz_info_o_programie
 from modules.smtp_store import load_smtp, save_smtp
 from modules.password_protection import menedzer_hasel
-from modules.utils import resource_path
+from modules.utils import get_app_icon_path, get_app_logo_path, resource_path
 from modules.raport import RaportDialog, RaportTopSprzetDialog, RaportTopNaprawyDialog
-from modules.cennik import CennikDialog, EdytujCennikDialog
 from modules.drukowanie import edytuj_szablon
 from modules.sms import SMSConfigDialog
 
-# Zabezpieczenie tłumaczeń (dodaj to na górze pliku ui_main.py)
 try:
     _("Test")
 except NameError:
     def _(text):
-        """Zwraca tekst bez tłumaczenia, gdy mechanizm i18n nie jest aktywny."""
         return text
 
 
 CONFIG_FILE = getattr(config, "CONFIG_FILE", "config.ini")
+
+def get_detailed_os_info():
+    """Zwraca czytelny dla człowieka opis systemu operacyjnego wraz z wersją jądra."""
+    try:
+        sys_platform = sys.platform
+
+        # --- 1. WINDOWS ---
+        if sys_platform == "win32":
+            win_release = platform.release() # np. "10" lub "11"
+            win_version = platform.version() # np. "10.0.22631"
+            return f"Windows {win_release} (Wersja: {win_version}, Jądro: NT)"
+
+        # --- 2. MACOS (DARWIN) ---
+        elif sys_platform == "darwin":
+            mac_ver = platform.mac_ver()[0] # np. "14.4"
+            kernel_ver = platform.release() # np. "23.4.0"
+            return f"macOS {mac_ver} (Jądro: Darwin {kernel_ver})"
+
+        # --- 3. LINUX (Arch, Ubuntu itp.) ---
+        elif sys_platform.startswith("linux"):
+            # Próbujemy odczytać dane z /etc/os-release (standard na nowoczesnych dystrybucjach)
+            dist_name = "Linux"
+            if os.path.exists("/etc/os-release"):
+                with open("/etc/os-release", "r", encoding="utf-8") as f:
+                    lines = f.readlines()
+                    info = {}
+                    for line in lines:
+                        if "=" in line:
+                            k, v = line.strip().split("=", 1)
+                            info[k] = v.strip('"')
+                    # Próbujemy wyciągnąć 'PRETTY_NAME' (np. "Arch Linux" lub "Ubuntu 22.04.4 LTS")
+                    dist_name = info.get("PRETTY_NAME", info.get("NAME", "Linux"))
+
+            kernel_ver = platform.release() # np. "6.12.1-arch1-1"
+            return f"{dist_name} (Jądro: Linux {kernel_ver})"
+
+    except Exception as e:
+        # Fallback w razie jakichkolwiek problemów z uprawnieniami / odczytem
+        return f"{platform.system()} {platform.release()} (Błąd detekcji: {str(e)})"
+
+    return f"{platform.system()} {platform.release()}"
+
+import urllib.parse
+import platform
+import subprocess
+
+class BugReportDialog(QtWidgets.QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(_("Zgłoś błąd lub sugestię"))
+        self.setMinimumWidth(500)
+        self.setMinimumHeight(400)
+
+        layout = QtWidgets.QVBoxLayout(self)
+
+        # 1. Opis działania
+        info_label = QtWidgets.QLabel(
+            _("Opisz krótko napotkany problem lub swoją sugestię.<br>"
+              "Po kliknięciu 'Zgłoś na GitHub' zostaniesz przekierowany do przeglądarki, "
+              "gdzie zgłoszenie zostanie automatycznie przygotowane.")
+        )
+        info_label.setWordWrap(True)
+        layout.addWidget(info_label)
+        layout.addSpacing(10)
+
+        # 2. Tytuł zgłoszenia
+        layout.addWidget(QtWidgets.QLabel(_("Krótki tytuł zgłoszenia:")))
+        self.title_input = QtWidgets.QLineEdit(self)
+        self.title_input.setPlaceholderText(_("np. Błąd przy generowaniu PDF, Sugestia dotycząca tabeli"))
+        layout.addWidget(self.title_input)
+        layout.addSpacing(10)
+
+        # 3. Opis szczegółowy
+        layout.addWidget(QtWidgets.QLabel(_("Szczegółowy opis (co robiłeś, co poszło nie tak):")))
+        self.desc_input = QtWidgets.QTextEdit(self)
+        self.desc_input.setPlaceholderText(_("Wpisz tutaj jak najwięcej szczegółów..."))
+        layout.addWidget(self.desc_input)
+        layout.addSpacing(15)
+
+        # 4. Przyciski z Twoim Lux Style
+        btn_layout = QtWidgets.QHBoxLayout()
+        self.btn_cancel = QtWidgets.QPushButton(_("Anuluj"), self)
+        self.btn_send = QtWidgets.QPushButton(_("Zgłoś na GitHub"), self)
+        self.btn_send.setDefault(True)
+
+        # Styl przycisku zgłoszenia (Twoje kolory: niebieski z ramką, wypełnienie na hover)
+        self.btn_send.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                color: #2980b9;
+                border: 1px solid #3498db;
+                border-radius: 4px;
+                padding: 6px 15px;
+                font-weight: bold;
+                min-width: 120px;
+            }
+            QPushButton:hover {
+                background-color: #2980b9;
+                color: #ffffff;
+            }
+            QPushButton:pressed {
+                background-color: #1f618d;
+                border-color: #1f618d;
+                color: #ffffff;
+            }
+        """)
+
+        # Styl przycisku anulowania
+        self.btn_cancel.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                color: #7f8c8d;
+                border: 1px solid #bdc3c7;
+                border-radius: 4px;
+                padding: 6px 15px;
+                min-width: 80px;
+            }
+            QPushButton:hover {
+                background-color: #7f8c8d;
+                color: #ffffff;
+            }
+            QPushButton:pressed {
+                background-color: #616a6b;
+                border-color: #616a6b;
+                color: #ffffff;
+            }
+        """)
+
+        self.btn_cancel.clicked.connect(self.reject)
+        self.btn_send.clicked.connect(self.send_to_github)
+
+        btn_layout.addStretch()
+        btn_layout.addWidget(self.btn_cancel)
+        btn_layout.addWidget(self.btn_send)
+        layout.addLayout(btn_layout)
+
+    def send_to_github(self):
+        title = self.title_input.text().strip()
+        description = self.desc_input.toPlainText().strip()
+
+        if not title:
+            title = "Zgłoszenie błędu"
+
+        # --- UŻYCIE NOWEJ, SZCZEGÓŁOWEJ DETEKCJI ---
+        os_info = get_detailed_os_info()
+        arch_info = platform.machine() # np. "AMD64" lub "x86_64"
+        python_ver = platform.python_version()
+
+        try:
+            from setup.config import APP_VERSION
+            app_version = APP_VERSION
+        except ImportError:
+            app_version = "1.0.0"
+
+        # Szablon zgłoszenia błędu dla repozytorium SerwisApp
+        github_body = (
+            f"### Opis problemu\n"
+            f"{description}\n\n"
+            f"--- \n"
+            f"### Środowisko uruchomieniowe\n"
+            f"- **Wersja aplikacji:** {app_version}\n"
+            f"- **System operacyjny:** {os_info}\n"
+            f"- **Architektura:** {arch_info}\n"
+            f"- **Wersja Pythona:** {python_ver}\n"
+        )
+
+        encoded_title = urllib.parse.quote(title)
+        encoded_body = urllib.parse.quote(github_body)
+
+        # Link kierujący do Twojego repozytorium SerwisApp
+        github_url = (
+            f"https://github.com/KlapkiSzatana/serwis-app/issues/new"
+            f"?title={encoded_title}"
+            f"&body={encoded_body}"
+        )
+
+        # Wywołanie systemowe otwarcia URL (zachowaj swój dotychczasowy kod otwierający przeglądarkę)
+        if os.name == 'nt':
+            try:
+                os.startfile(github_url)
+            except Exception:
+                subprocess.Popen(['cmd', '/c', 'start', '', github_url], shell=True)
+        else:
+            env = dict(os.environ)
+            env.pop('LD_LIBRARY_PATH', None)
+            env.pop('QT_PLUGIN_PATH', None)
+            env.pop('QT_QPA_PLATFORM_PLUGIN_PATH', None)
+
+            opener = 'open' if sys.platform == 'darwin' else 'xdg-open'
+            try:
+                subprocess.Popen([opener, github_url], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            except Exception as e:
+                print(f"Nie udało się otworzyć przeglądarki: {e}")
+
+        self.accept()
 
 class EmailConfigWindow(QtWidgets.QDialog):
     """Okno obsługujące wydzielony fragment funkcjonalności aplikacji."""
@@ -110,6 +302,7 @@ class Ui_MainWindow(object):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1120, 750)
         MainWindow.setMinimumSize(QtCore.QSize(980, 650))
+        MainWindow.setWindowIcon(QtGui.QIcon(get_app_icon_path()))
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.mainLayout = QtWidgets.QVBoxLayout(self.centralwidget)
@@ -126,16 +319,16 @@ class Ui_MainWindow(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.lineEdit_szukajka.sizePolicy().hasHeightForWidth())
         self.lineEdit_szukajka.setSizePolicy(sizePolicy)
-        self.lineEdit_szukajka.setMinimumSize(QtCore.QSize(200, 0))
+        self.lineEdit_szukajka.setMinimumSize(QtCore.QSize(300, 0))
         self.lineEdit_szukajka.setObjectName("lineEdit_szukajka")
         self.topLayout.addWidget(self.lineEdit_szukajka)
 
         # Odśwież
-        self.pushButtonNew_ref = MyPushButton(parent=self.centralwidget)
-        self.pushButtonNew_ref.setFixedSize(30, 26)
-        self.pushButtonNew_ref.setObjectName("pushButtonNew_ref")
-        self.topLayout.addWidget(self.pushButtonNew_ref)
-        self.pushButtonNew_ref.setToolTip(_("Odśwież Tabelę"))
+        #self.pushButtonNew_ref = MyPushButton(parent=self.centralwidget)
+        #self.pushButtonNew_ref.setFixedSize(30, 26)
+        #self.pushButtonNew_ref.setObjectName("pushButtonNew_ref")
+        #self.topLayout.addWidget(self.pushButtonNew_ref)
+        #self.pushButtonNew_ref.setToolTip(_("Odśwież Tabelę"))
 
         # Label top
         self.label_top = QtWidgets.QLabel(parent=self.centralwidget)
@@ -306,10 +499,9 @@ class Ui_MainWindow(object):
         spacerItem = QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
         self.bottomLayout.addItem(spacerItem)
 
-        # Ikona serwisu
         self.label_help_icon = QtWidgets.QLabel(self.centralwidget)
         self.label_help_icon.setObjectName("label_help_icon")
-        icon_path = resource_path("actions/serwisapp.png")
+        icon_path = get_app_logo_path()
         pixmap = QtGui.QPixmap(icon_path)
         pixmap = pixmap.scaled(
             40, 40,
@@ -334,9 +526,7 @@ class Ui_MainWindow(object):
                     from modules.easteregg import EasterEggDialog
                     EasterEggDialog(self.centralwidget).exec()
 
-        # "Hakujemy" ikonkę, zastępując jej domyślną reakcję naszą funkcją
         self.label_help_icon.mousePressEvent = logo_klikniete
-        # -----------------------
 
         # Label Serwis
         self.label_serwis = QtWidgets.QLabel(self.centralwidget)
@@ -416,7 +606,7 @@ class Ui_MainWindow(object):
         self.pushButtonNew_clients.setText(_("Klienci"))
         self.pushButtonNew_clients.setToolTip(_("Baza kontrahentów"))
 
-        self.pushButtonNew_ref.setIcon(QtGui.QIcon(resource_path("actions/refresh.png")))
+        #self.pushButtonNew_ref.setIcon(QtGui.QIcon(resource_path("actions/refresh.png")))
 
         # Central widget i menubar
         MainWindow.setCentralWidget(self.centralwidget)
@@ -434,12 +624,25 @@ class Ui_MainWindow(object):
         # --- 1. Menu Zlecenia ---
         self.menuPlik = QtWidgets.QMenu(_("Zlecenia"), self.menubar)
         self.actionDodaj = QAction(QtGui.QIcon(resource_path("actions/dodaj.png")), _("Dodaj Zlecenie"), MainWindow)
+        self.actionDodaj.setShortcut(QKeySequence("Ctrl+N")) # Standardowy skrót dla nowej pozycji
+
         self.actionPopraw = QAction(QtGui.QIcon(resource_path("actions/edit.png")), _("Edytuj Zlecenie"), MainWindow)
+        self.actionPopraw.setShortcut(QKeySequence("Ctrl+E"))
+
         self.actionUsun = QAction(QtGui.QIcon(resource_path("actions/usun.png")), _("Usuń Zlecenie"), MainWindow)
+        self.actionUsun.setShortcut(QKeySequence("Delete"))
+
         self.actionSzczegoly = QAction(QtGui.QIcon(resource_path("actions/details.png")), _("Pokaż Szczegóły"), MainWindow)
+        self.actionSzczegoly.setShortcut(QKeySequence("Return")) # Klawisz Enter/Return
+
         self.actionStatus = QAction(QtGui.QIcon(resource_path("actions/zakoncz.png")), _("Zakończ Zlecenie"), MainWindow)
+        self.actionStatus.setShortcut(QKeySequence("Ctrl+L"))
+
         self.actionDrukuj = QAction(QtGui.QIcon(resource_path("actions/drukuj.png")), _("Drukuj"), MainWindow)
+        self.actionDrukuj.setShortcut(QKeySequence("Ctrl+P"))
+
         self.actionZakoncz = QAction(QtGui.QIcon(resource_path("actions/exit.png")), _("Zakończ Aplikację"), MainWindow)
+        self.actionZakoncz.setShortcut(QKeySequence("Ctrl+Q"))
 
         self.menuPlik.addAction(self.actionDodaj)
         self.menuPlik.addAction(self.actionPopraw)
@@ -453,17 +656,28 @@ class Ui_MainWindow(object):
         # --- 2. Menu Filtruj ---
         self.menuFiltruj = QtWidgets.QMenu(_("Filtruj"), self.menubar)
         self.actionNowe = QAction(QtGui.QIcon(resource_path("actions/new.png")), _("Przyjęte"), MainWindow)
-        self.actionend = QAction(QtGui.QIcon(resource_path("actions/zakoncz.png")), _("Zakończone"), MainWindow)
+        self.actionNowe.setShortcut(QKeySequence("Ctrl+1"))
+
         self.actionAll = QAction(QtGui.QIcon(resource_path("actions/all.png")), _("Wszystkie"), MainWindow)
+        self.actionAll.setShortcut(QKeySequence("Ctrl+2"))
+
+        self.actionend = QAction(QtGui.QIcon(resource_path("actions/zakoncz.png")), _("Zakończone"), MainWindow)
+        self.actionend.setShortcut(QKeySequence("Ctrl+3"))
+
         self.menuFiltruj.addAction(self.actionNowe)
         self.menuFiltruj.addAction(self.actionAll)
         self.menuFiltruj.addAction(self.actionend)
 
         # --- 3. Menu Narzędzia ---
         self.menuNarzedzia = QtWidgets.QMenu(_("Narzędzia"), self.menubar)
-        self.actionBackup = QAction(QtGui.QIcon(resource_path("actions/backup2.png")), _("Kopia Zapasowa i Przywracanie"), MainWindow)
+        self.actionBackup = QAction(QtGui.QIcon(resource_path("actions/backup.png")), _("Kopia Zapasowa i Przywracanie"), MainWindow)
+        self.actionBackup.setShortcut(QKeySequence("Ctrl+B"))
+
         self.actionBaza = QAction(QtGui.QIcon(resource_path("actions/baza.png")), _("Wybierz Bazę Danych (Zdalna/Lokalna)"), MainWindow)
+        self.actionBaza.setShortcut(QKeySequence("Ctrl+D"))
+
         self.action_users_manager = QAction(QtGui.QIcon(resource_path("actions/hasloon.png")), _("Użytkownicy i Hasła"), MainWindow)
+        self.action_users_manager.setShortcut(QKeySequence("Ctrl+U"))
 
         self.menuNarzedzia.addAction(self.actionBackup)
         self.menuNarzedzia.addAction(self.actionBaza)
@@ -473,25 +687,28 @@ class Ui_MainWindow(object):
         # --- 4. Menu Ustawienia ---
         self.menuUstawienia = QtWidgets.QMenu(_("Ustawienia"), self.menubar)
         self.actionDaneFirmy = QAction(QtGui.QIcon(resource_path("actions/firma.png")), _("Edytuj Dane Firmy"), MainWindow)
+        self.actionDaneFirmy.setShortcut(QKeySequence("Ctrl+Shift+F"))
+
         self.actionEmailConfig = QAction(QtGui.QIcon(resource_path("actions/email.png")), _("Konfiguracja Email"), MainWindow)
+        self.actionEmailConfig.setShortcut(QKeySequence("Ctrl+Shift+M"))
+
         self.actionKonfiguracjaSMS = QAction(QtGui.QIcon(resource_path("actions/smsconf.png")), _("Konfiguracja SMS (SMSAPI)"), MainWindow)
+        self.actionKonfiguracjaSMS.setShortcut(QKeySequence("Ctrl+Shift+S"))
+
         self.actionEdytujSzablon = QAction(QtGui.QIcon(resource_path("actions/template.png")), _("Ustawienia Wydruku"), MainWindow)
+        self.actionEdytujSzablon.setShortcut(QKeySequence("Ctrl+Shift+T"))
 
         self.menuUstawienia.addAction(self.actionDaneFirmy)
         self.menuUstawienia.addAction(self.actionEmailConfig)
         self.menuUstawienia.addAction(self.actionKonfiguracjaSMS)
         self.menuUstawienia.addAction(self.actionEdytujSzablon)
 
-        # --- 5. Raport ---
-        # Tworzymy główne menu rozwijane
         self.menuRaporty = QtWidgets.QMenu(_("Raporty"), self.menubar)
-        self.menuRaporty.setIcon(QtGui.QIcon(resource_path(""))) # Dodaj tu ikonkę jeśli masz
 
-        # Tworzymy 3 oddzielne akcje do menu
         self.actionRaportFinansowy = QAction(QtGui.QIcon(resource_path("actions/raport.png")), _("Raport Finansowy"), MainWindow)
+        self.actionRaportFinansowy.setShortcut(QKeySequence("Ctrl+R"))
         self.actionRaportSprzet = QAction(QtGui.QIcon(resource_path("actions/raport.png")), _("Najczęściej naprawiany sprzęt"), MainWindow)
         self.actionRaportNajdrozsze = QAction(QtGui.QIcon(resource_path("actions/raport.png")), _("Najdroższe naprawy"), MainWindow)
-        # Dodajemy akcje do rozwijanego menu
         self.menuRaporty.addAction(self.actionRaportFinansowy)
         self.menuRaporty.addAction(self.actionRaportSprzet)
         self.menuRaporty.addAction(self.actionRaportNajdrozsze)
@@ -499,26 +716,34 @@ class Ui_MainWindow(object):
         # Tworzymy nowe menu dla Cennika w głównym pasku (MenuBar)
         self.menuCennik = QtWidgets.QMenu(_("Cennik"), self.menubar)
 
-        self.actionPokazCennik = QAction(QtGui.QIcon(resource_path("actions/readme.png")), _("Pokaż cennik"), MainWindow)
-        self.actionEdytujCennik = QAction(QtGui.QIcon(resource_path("actions/edit.png")), _("Edytuj cennik"), MainWindow)
+        self.actionPokazCennik = QAction(QtGui.QIcon(resource_path("actions/readme.png")), _("Cennik"), MainWindow)
+        self.actionPokazCennik.setShortcut(QKeySequence("Ctrl+K"))
 
         self.menuCennik.addAction(self.actionPokazCennik)
-        self.menuCennik.addAction(self.actionEdytujCennik)
-
-        # Podpinamy akcje pod nasze nowe klasy
-        self.actionPokazCennik.triggered.connect(lambda: CennikDialog(parent=MainWindow).exec())
-        self.actionEdytujCennik.triggered.connect(lambda: EdytujCennikDialog(parent=MainWindow).exec())
 
         # --- 6. Menu Pomoc ---
         self.menuPomoc = QtWidgets.QMenu(_("Pomoc"), self.menubar)
         self.actionPrzewodnik = QAction(QtGui.QIcon(resource_path("actions/readme.png")), _("Przewodnik"), MainWindow)
+        self.actionPrzewodnik.setShortcut(QKeySequence("F1"))
 
         self.actionWsparcie = QAction(QtGui.QIcon(resource_path("actions/wsparcie.png")), _("Postaw Kawkę"), MainWindow)
+
+        # --- ZGŁOŚ BŁĄD (Ctrl+Shift+B dla Win/Linux, Cmd+Shift+B dla macOS) ---
+        self.actionZglosBlad = QAction(QtGui.QIcon(resource_path("actions/robal.png")), _("Zgłoś błąd / sugestię"), MainWindow)
+
+        # Przypisujemy ujednolicony, bezpieczny skrót
+        self.actionZglosBlad.setShortcut(QKeySequence("Ctrl+Shift+B") if sys.platform != "darwin" else QKeySequence("Cmd+Shift+B"))
+
+        # Pamiętamy o wymuszeniu kontekstu na całe okno, żeby działało przy zaznaczonej tabeli
+        self.actionZglosBlad.setShortcutContext(QtCore.Qt.ShortcutContext.WindowShortcut)
+
+
         self.actionOProgramie = QAction(QtGui.QIcon(resource_path("actions/about.png")), _("O Programie"), MainWindow)
 
         self.menuPomoc.addAction(self.actionPrzewodnik)
         self.menuPomoc.addSeparator()
         self.menuPomoc.addAction(self.actionWsparcie)
+        self.menuPomoc.addAction(self.actionZglosBlad)
         self.menuPomoc.addAction(self.actionOProgramie)
 
         # --- Dodawanie do paska menu ---
@@ -557,16 +782,17 @@ class Ui_MainWindow(object):
 
         self.actionPrzewodnik.triggered.connect(lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(os.path.join(os.path.expanduser("~"), ".SerwisApp", "przewodnik.pdf"))))
 
+        # Podepnij pod sekcją pomocy w pliku głównym:
         self.actionWsparcie.triggered.connect(lambda: pokaz_wsparcie(None))
+        self.actionZglosBlad.triggered.connect(lambda: BugReportDialog(MainWindow).exec()) # Uruchomienie okna zgłaszania błędu
         self.actionOProgramie.triggered.connect(lambda: pokaz_info_o_programie(None))
 
         MainWindow.setMenuBar(self.menubar)
 
         # Statusbar
         self.statusbar = QtWidgets.QStatusBar(parent=MainWindow)
-        self.label_plus_status = QtWidgets.QLabel(parent=self.statusbar)
-        self.statusbar.addWidget(self.label_plus_status)
-        self.update_plus_status()
+        #self.statusbar.addWidget(self.label_plus_status)
+        #self.update_plus_status()
         MainWindow.setStatusBar(self.statusbar)
 
         # Inicjalizacja UI
@@ -628,74 +854,7 @@ class Ui_MainWindow(object):
         self.pushButtonNew_backup.setText(_translate("MainWindow", _("Backup")))
         self.pushButtonNew_filter.setText(_translate("MainWindow", _("Rok")))
 
-    def update_plus_status(self):
-        """
-        Zaktualizowana wersja: Odporna na różnice w ścieżkach (Windows/Linux)
-        i poprawnie odświeżająca dane firmy.
-        """
-        import os
-        import sqlite3
-        from setup import config
 
-        # --- 2. Ustalanie typu bazy ---
-        # Pobieramy pełną ścieżkę aktualnej bazy
-        try:
-            current_db_path = os.path.abspath(config.DB_FILE)
-            current_dir = os.path.normpath(os.path.dirname(current_db_path))
-        except Exception:
-            current_dir = ""
-
-        # Pobieramy ścieżkę katalogu domyślnego (.SerwisApp)
-        local_dir_raw = os.path.join(os.path.expanduser("~"), ".SerwisApp")
-        local_dir = os.path.normpath(os.path.abspath(local_dir_raw))
-
-        # Porównanie - na Windowsie wielkość liter nie ma znaczenia, więc dajemy .lower()
-        if os.name == 'nt':
-            is_local = (current_dir.lower() == local_dir.lower())
-        else:
-            is_local = (current_dir == local_dir)
-
-        if is_local:
-            baza_txt = "[Baza Lokalna]"
-            baza_color = "gray"
-        else:
-            baza_txt = "[Baza Sieciowa]"
-            baza_color = "#0055ff" # Niebieski
-
-        # --- 3. Pobieranie nazwy firmy ---
-        nazwa_firmy = _("Brak nazwy firmy")
-
-        # Sprawdzamy czy plik fizycznie istnieje przed połączeniem
-        if os.path.exists(config.DB_FILE):
-            try:
-                # Timeout 5 sekund, żeby nie wieszało przy sieciowej
-                conn = sqlite3.connect(config.DB_FILE, timeout=5)
-                c = conn.cursor()
-                c.execute("SELECT nazwa FROM firma LIMIT 1")
-                row = c.fetchone()
-                conn.close()
-
-                if row and row[0]:
-                    nazwa_firmy = row[0]
-                else:
-                    nazwa_firmy = "Firma (Brak nazwy w DB)"
-
-            except sqlite3.Error as e:
-                print(f"Błąd SQL przy pobieraniu firmy: {e}")
-                nazwa_firmy = "Błąd odczytu bazy"
-            except Exception as e:
-                print(f"Inny błąd: {e}")
-        else:
-            nazwa_firmy = "Plik bazy nie istnieje!"
-
-        # --- 4. Wyświetlanie ---
-        text = (
-            f'&nbsp;&nbsp;&nbsp;<span style="font-size:10pt;"> '
-            f'<span style="color:{baza_color}; font-weight:bold;">{baza_txt}</span> | '
-            f'<b>{nazwa_firmy}</b>'
-        )
-
-        self.label_plus_status.setText(text)
 
 if __name__ == "__main__":
     import sys

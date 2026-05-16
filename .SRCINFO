@@ -1,6 +1,6 @@
 pkgbase = serwis-app
-	pkgdesc = Proste Prowadzenie Serwisu - Kompleksowe zarządzanie serwisem
-	pkgver = 2.3.2
+	pkgdesc = Proste Prowadzenie Serwisu
+	pkgver = 3.0.0
 	pkgrel = 1
 	url = https://github.com/KlapkiSzatana/serwis-app
 	arch = any
@@ -13,9 +13,7 @@ pkgbase = serwis-app
 	optdepends = python-barcode: obsługa kodów kreskowych na wydrukach
 	source = serwis-app.py
 	source = serwisapp.png
-	source = icon.png
-	sha256sums = 4ec770445bcafbc733f7d421cf6f5df2706ae1b2b904c4c204ad1e2c713b0bb7
-	sha256sums = 9526fdc68baa6a9445ae59a91f633a73c5787a416d99c89085b222d6e5804e0e
-	sha256sums = fb0a5349e2be3d9fc051c0768c03a30008fd422025eddc838c05b4d9d5af0c03
+	sha256sums = d340b8cf38f05a1f252313f6ef30b10c2ac45b8ecf63b2d2f701f6a9b4cb7e34
+	sha256sums = 4e98f7e73d667f695ef6430db3c1877f47b76ad504fd3a1eba69937ac047ff72
 
 pkgname = serwis-app

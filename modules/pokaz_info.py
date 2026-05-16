@@ -16,7 +16,7 @@ year_str = f"2025-{current_year}" if current_year > 2025 else "2025"
 def pokaz_info_o_programie(window, version=None):
     """Wyświetla wskazane dane lub okno."""
     if version is None:
-        version = f"{config.APP_VERSION} {config.APP_NAME}"
+        version = config.APP_VERSION
 
     dialog = QtWidgets.QDialog(window)
     dialog.setWindowTitle(_("O programie - SerwisApp"))

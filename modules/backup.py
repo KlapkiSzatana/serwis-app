@@ -10,22 +10,18 @@ from setup import config
 from PySide6 import QtCore, QtWidgets, QtGui
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 from modules.button import MyPushButton
-from modules.utils import resource_path
+from modules.utils import get_app_icon_path, get_app_logo_path, resource_path
 
-# Zabezpieczenie na wypadek uruchamiania modułu niezależnie
 try:
     _("Test")
 except NameError:
     def _(text):
-        """Realizuje pomocniczą część logiki aplikacji."""
         return text
 
 USER_HOME = os.path.expanduser("~")
 APP_DIR = os.path.join(USER_HOME, ".SerwisApp")
 if not os.path.exists(APP_DIR):
     os.makedirs(APP_DIR)
-
-# ---------------------- Helper Functions ----------------------
 
 def force_remove_file(path, max_attempts=5, delay=0.3):
     """Spróbuj wymusić usunięcie pliku, nawet jeśli jest zablokowany."""
@@ -83,8 +79,6 @@ def wykonaj_backup_logika(dst_path, progress_callback=None):
                     progress_callback(int(count / total_files * 100))
                     QtWidgets.QApplication.processEvents()
 
-# ---------------------- UI Class ----------------------
-
 class Ui_MainWindow(object):
     """Klasa budująca i przechowująca elementy interfejsu użytkownika."""
     LAST_PATH_FILE = os.path.join(APP_DIR, "last_path.txt")
@@ -94,20 +88,10 @@ class Ui_MainWindow(object):
         self.main_window_ref = MainWindow
         MainWindow.setObjectName("MainWindow")
         MainWindow.setFixedSize(500, 340)
+        MainWindow.setWindowIcon(QtGui.QIcon(get_app_icon_path()))
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         MainWindow.setCentralWidget(self.centralwidget)
 
-        # Logo
-        logo_size = 40
-        margin_right = 15
-        margin_bottom = 1
-        margin_top = 20
-        self.logo_label = QtWidgets.QLabel(self.centralwidget)
-        pixmap = QtGui.QPixmap(resource_path("resources/logo/serwisapp.png"))
-        self.logo_label.setPixmap(pixmap.scaled(logo_size, logo_size, QtCore.Qt.KeepAspectRatio))
-        self.logo_label.resize(logo_size, logo_size)
-
-        # App name
         self.app_name_label = QtWidgets.QLabel(_("SerwisApp - Backup"), self.centralwidget)
         font = QtGui.QFont()
         font.setPointSize(14)
@@ -117,16 +101,14 @@ class Ui_MainWindow(object):
         self.app_name_label.adjustSize()
 
         def adjust_positions():
-            """Realizuje logikę operacji adjust positions w klasie Ui_MainWindow."""
+            """Realizuje logikę operacji adjust positions."""
             window_width = self.centralwidget.width()
-            window_height = self.centralwidget.height()
-            self.logo_label.move(window_width - logo_size - margin_right,
-                                 window_height - logo_size - margin_bottom)
             x_center = (window_width - self.app_name_label.width()) // 2
             self.app_name_label.move(x_center, margin_top)
+
+        margin_top = 20
         QtCore.QTimer.singleShot(0, adjust_positions)
 
-        # Path input
         self.lineEdit = QtWidgets.QLineEdit(self.centralwidget)
         self.lineEdit.setGeometry(QtCore.QRect(90, 90, 281, 32))
         self.lineEdit.setText(self.load_last_path())
@@ -134,7 +116,6 @@ class Ui_MainWindow(object):
         self.toolButton.setGeometry(QtCore.QRect(380, 90, 33, 31))
         self.toolButton.clicked.connect(lambda: self.choose_file(MainWindow))
 
-        # Backup button
         self.pushButton = MyPushButton(_("Utwórz Kopię Bazy"), self.centralwidget)
         self.pushButton.setGeometry(QtCore.QRect(90, 160, 156, 34))
         icon_size = QtCore.QSize(24, 24)
@@ -143,7 +124,6 @@ class Ui_MainWindow(object):
         self.pushButton.show()
         self.pushButton.clicked.connect(self.create_backup)
 
-        # Restore button
         self.pushButton_2 = MyPushButton(_("Przywróć Kopię"), self.centralwidget)
         self.pushButton_2.setGeometry(QtCore.QRect(250, 160, 156, 34))
         self.pushButton_2.setIcon(QtGui.QIcon(resource_path("actions/restore.png")))
@@ -151,46 +131,28 @@ class Ui_MainWindow(object):
         self.pushButton_2.show()
         self.pushButton_2.clicked.connect(self.restore_backup_action)
 
-        # Auto backup checkbox
         self.checkBoxAuto = QtWidgets.QCheckBox(self.centralwidget)
         self.checkBoxAuto.setGeometry(QtCore.QRect(90, 210, 320, 20))
         self.checkBoxAuto.setText(_("Wykonuj kopię automatycznie przy zamykaniu programu"))
         self.checkBoxAuto.setChecked(self.load_auto_backup_state())
         self.checkBoxAuto.stateChanged.connect(self.save_auto_backup_state)
 
-        # Progress bar
         self.progressBar = QtWidgets.QProgressBar(self.centralwidget)
         self.progressBar.setGeometry(QtCore.QRect(90, 250, 321, 23))
         self.progressBar.setProperty("value", 0)
 
-        # Label
         self.label2 = QtWidgets.QLabel(_("Podaj nazwę dla pliku kopii"), self.centralwidget)
         self.label2.setGeometry(QtCore.QRect(0, 55, 500, 30))
         self.label2.setAlignment(QtCore.Qt.AlignCenter)
 
-        # Menubar & statusbar
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 500, 30))
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         MainWindow.setStatusBar(self.statusbar)
-        # Obliczamy rok
-        curr_year = datetime.date.today().year
-        year_str = f"2025-{curr_year}" if curr_year > 2025 else "2025"
-
-        # Tworzymy etykietę (dodałem spację przed rokiem dla czytelności)
-        copyright_label = QtWidgets.QLabel(f"© KlapkiSzatana {year_str}")
-        font = QtGui.QFont()
-        font.setPointSize(8)
-        font.setBold(False)
-        copyright_label.setFont(font)
-        copyright_label.setAlignment(QtCore.Qt.AlignCenter)
-        self.statusbar.addPermanentWidget(copyright_label)
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
-
-    # ---------------------- UI Helper Methods ----------------------
 
     def retranslateUi(self, MainWindow):
         """Ustawia teksty interfejsu zgodnie z aktywnym tłumaczeniem."""

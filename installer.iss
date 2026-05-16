@@ -1,18 +1,20 @@
 [Setup]
 AppName=SerwisApp
-AppVersion=2.3.2
-AppVerName=SerwisApp 2.3.2
+AppVersion=3.0.0
+AppVerName=SerwisApp 3.0.0
 AppPublisher=KlapkiSzatana
 AppPublisherURL=https://github.com/KlapkiSzatana/serwis-app
-AppSupportURL=https://github.com/KlapkiSzatana/serwis-app
+AppSupportURL=https://github.com/KlapkiSzatana/serwis-app/issues
+AppUpdatesURL=https://github.com/KlapkiSzatana/serwis-app/releases
+AppCopyright=© 2026 KlapkiSzatana
 DefaultDirName={userappdata}\KlapkiSzatana\SerwisApp
 DefaultGroupName=SerwisApp
 UninstallDisplayIcon={app}\serwis-app.exe
-UninstallDisplayName=SerwisApp 2.3.2 - Proste Prowadzenie Serwisu
+UninstallDisplayName=SerwisApp 3.0.0 - Proste Prowadzenie Serwisu
 VersionInfoCompany=KlapkiSzatana
 VersionInfoDescription=Proste Prowadzenie Serwisu
-VersionInfoCopyright=Copyright (c) 2026 KlapkiSzatana
-VersionInfoVersion=2.3.2.0
+VersionInfoCopyright=Copyright © 2026 KlapkiSzatana
+VersionInfoVersion=3.0.0.0
 Compression=lzma
 SolidCompression=yes
 OutputDir=user_setup
@@ -21,7 +23,6 @@ LicenseFile=LICENSE
 PrivilegesRequired=lowest
 
 [Files]
-; Kopiuje całą zawartość folderu wyjściowego PyInstallera
 Source: "dist\serwis-app\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]

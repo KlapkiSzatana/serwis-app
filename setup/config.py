@@ -4,8 +4,7 @@ import sqlite3
 import sys
 import tempfile
 
-APP_VERSION = "2.3.2"
-APP_NAME = ""
+APP_VERSION = "3.0.0"
 APP_NAME2 = "SerwisApp"
 
 # --- ŚCIEŻKI I KATALOGI ---
@@ -24,7 +23,6 @@ CONFIG_DB = os.path.join(CONFIG_DIR, "config.db")
 CONFIG_BAZA_FILE = os.path.join(CONFIG_DIR, "bazadir.json")
 
 def _resolve_base_dir():
-    """Realizuje logikę operacji resolve base dir."""
     if getattr(sys, "frozen", False):
         candidates = [
             os.path.dirname(os.path.abspath(sys.executable)),
@@ -41,7 +39,7 @@ def _resolve_base_dir():
     candidates.append(os.path.join(tempfile.gettempdir(), os.path.basename(sys.executable)))
 
     for base_dir in candidates:
-        if base_dir and os.path.exists(os.path.join(base_dir, "resources", "logo", "serwisapp.png")):
+        if base_dir and os.path.exists(os.path.join(base_dir, "serwisapp.png")):
             return base_dir
 
     for base_dir in candidates:
@@ -57,9 +55,8 @@ SMTP_DB = os.path.join(HOME_DIR, "ptms.db") # Baza do przechowywania konfiguracj
 KEY_FILE = os.path.join(HOME_DIR, "secret.key") # Klucz szyfrowania haseł
 
 # --- SZABLONY I ZASOBY ---
-SRC_LOGO_FILE = os.path.join(BASE_DIR, "resources", "logo", "serwisapp.png")
+SRC_LOGO_FILE = os.path.join(BASE_DIR, "serwisapp.png")
 DST_LOGO_FILE = os.path.join(LOGO_DIR, "serwisapp.png")
-ICON_FILE = SRC_LOGO_FILE
 
 def get_smtp_config():
     """

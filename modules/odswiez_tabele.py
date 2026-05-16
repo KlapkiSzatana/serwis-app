@@ -221,23 +221,34 @@ def odswiez_tabele(c, model, table_view=None, status_filter=None, search_term=No
             selection_model = table_view.selectionModel()
             if selection_model:
                 selection_model.clearSelection()
+                restored_selection = False
+
+                def zaznacz_wiersz(row_idx, scroll=False):
+                    """Ustawia zaznaczenie i bieżący indeks na wskazanym wierszu."""
+                    nonlocal restored_selection
+                    index = model.index(row_idx, 0)
+                    selection_model.select(
+                        index,
+                        QtCore.QItemSelectionModel.SelectionFlag.ClearAndSelect |
+                        QtCore.QItemSelectionModel.SelectionFlag.Rows
+                    )
+                    table_view.setCurrentIndex(index)
+                    restored_selection = True
+                    if scroll:
+                        table_view.scrollTo(index)
 
                 if highlight_id:
                     for row_idx in range(model.rowCount()):
                         item = model.item(row_idx, 0)
                         if item.text() == str(highlight_id):
-                            index = model.index(row_idx, 0)
-                            selection_model.select(index, QtCore.QItemSelectionModel.Select | QtCore.QItemSelectionModel.Rows)
-                            table_view.scrollTo(index)
+                            zaznacz_wiersz(row_idx, scroll=True)
                             return
 
                         real_id = item.data(QtCore.Qt.UserRole)
                         try:
                             hl_int = int(str(highlight_id).split('/')[0])
                             if real_id == hl_int:
-                                index = model.index(row_idx, 0)
-                                selection_model.select(index, QtCore.QItemSelectionModel.Select | QtCore.QItemSelectionModel.Rows)
-                                table_view.scrollTo(index)
+                                zaznacz_wiersz(row_idx, scroll=True)
                                 return
                         except (TypeError, ValueError, IndexError):
                             pass
@@ -247,11 +258,13 @@ def odswiez_tabele(c, model, table_view=None, status_filter=None, search_term=No
                         item = model.item(row_idx, 0)
                         real_id = item.data(QtCore.Qt.UserRole)
                         if str(real_id) in selected_ids:
-                            index = model.index(row_idx, 0)
-                            selection_model.select(
-                                index,
-                                QtCore.QItemSelectionModel.SelectionFlag.Select | QtCore.QItemSelectionModel.SelectionFlag.Rows
-                            )
+                            zaznacz_wiersz(row_idx)
+                            break
+
+                if not restored_selection and model.rowCount() > 0:
+                    # Po starcie aplikacji lub po odświeżeniu bez wcześniejszego wyboru
+                    # ustawiamy najnowsze zlecenie jako aktywne.
+                    zaznacz_wiersz(0)
 
             table_view.verticalScrollBar().setValue(v_scroll_pos)
             table_view.horizontalScrollBar().setValue(h_scroll_pos)

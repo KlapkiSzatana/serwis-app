@@ -42,6 +42,17 @@ TEMPLATE_MAP = {
     "WYDANIE ZLECENIA": "raport"
 }
 
+
+def _get_podpis_text(template_key, copy_idx=None):
+    """Zwraca właściwy podpis dla danego typu wydruku i kopii."""
+    if template_key == "zlecenie":
+        if copy_idx == 1:
+            return "Podpis Klienta: ...................."
+        if copy_idx == 0:
+            return "Podpis Serwisu: ...................."
+        return "Podpis wg kopii: Serwis / Klient"
+    return "Podpis Serwisu: ...................."
+
 # ============================================================================
 # KONFIGURACJA
 # ============================================================================
@@ -266,9 +277,9 @@ class ReportItem(QtWidgets.QGraphicsRectItem):
         elif k == "naprawa": return f"WYKONANE CZYNNOŚCI:\n{d['naprawa']}"
         elif k == "koszty": return f"Części: {d['koszt_czesci']}\nUsługa: {d['koszt_uslugi']}\nRAZEM: {d['koszt_suma']}"
         elif k == "rodo": return self.data.get("text", DEFAULT_RODO_TEXT)
-        elif k == "stopka": return f"SerwisApp © {d['rok']}"
+        elif k == "stopka": return f"Wydrukowano z SerwisApp © {d['rok']}"
         elif k == "info": return f"Data: {d['data']}\nKlient: {d['imie']}\nSprzęt: {d['sprzet']}"
-        elif k == "podpisy": return "Podpis Serwisu: ...................."
+        elif k == "podpisy": return _get_podpis_text(self.editor.current_template)
         return self.data.get("label", k)
 
     def mousePressEvent(self, event):
@@ -882,7 +893,7 @@ def _render_page(printer, layout_data, data_dict, template_key, logo_pixmap):
                 elif key == "rodo": text = props.get("text", DEFAULT_RODO_TEXT)
                 elif key == "stopka": text = f"Wydrukowano z SerwisApp © {data_dict['rok']}"
                 elif key == "info": text = f"Data: {data_dict['data']}\nKlient: {data_dict['imie']}\nSprzęt: {data_dict['sprzet']}"
-                elif key == "podpisy": text = "Podpis Serwisu: ...................."
+                elif key == "podpisy": text = _get_podpis_text(template_key, i if template_key == "zlecenie" else None)
 
                 tr = QRectF(rect)
                 if props.get("border"): offset = 4 + (props.get("border_width", 1)/2); tr.adjust(offset, offset, -offset, -offset)

@@ -63,7 +63,7 @@ jobs:
             # 1. Budowanie Windows - tryb Standalone (katalog plików)
             python -m PyInstaller --noconfirm --windowed \
               --add-data "serwisapp.png;." \
-              --add-data "icon.png;." \
+              --add-data "serwisapp.ico;." \
               --add-data "actions;actions" \
               --add-data "fonts;fonts" \
               --add-data "modules;modules" \
@@ -71,7 +71,7 @@ jobs:
               --add-data "ui;ui" \
               --add-data "resources;resources" \
               --version-file "file_version_info.txt" \
-              --icon "icon.ico" \
+              --icon "serwisapp.ico" \
               --name "serwis-app" \
               serwis-app.py
 
@@ -89,7 +89,6 @@ jobs:
             # 4. Dla macOS - budowanie w trybie --onedir i spakowanie do DMG
             python -m PyInstaller --noconfirm --onedir --windowed \
               --add-data "serwisapp.png:." \
-              --add-data "icon.png:." \
               --add-data "serwisapp.icns:." \
               --add-data "actions:actions" \
               --add-data "fonts:fonts" \
@@ -109,7 +108,6 @@ jobs:
             # 6. Dla Linux - budowanie w trybie --onedir (tworzy katalog SerwisApp z binarką i zależnościami)
             python -m PyInstaller --noconfirm --onedir --windowed \
               --add-data "serwisapp.png:." \
-              --add-data "icon.png:." \
               --add-data "actions:actions" \
               --add-data "fonts:fonts" \
               --add-data "modules:modules" \
@@ -170,4 +168,22 @@ jobs:
             dist/SerwisApp_linux.tar.gz
           body: |
             ## Zmiany w tej wersji:
-            - W belce tytułowej powielona nazwa aplikacji - usunięto.
+            - Dodanie obsługi skrótów klawiaturowych w najważniejszych sekcjach aplikacji
+            - Dodanie możliwości szybkiego zgłaszania błędów bezpośrednio przez GitHub
+            - Usprawnienia i poprawki nowych komponentów wydruków i dokumentów
+            - Dodanie możliwości dodawania pozycji z cennika wraz z ceną
+            - Dodanie możliwości wyboru pozycji z cennika w edycji zlecenia
+            - Odświeżenie wyglądu stopki aplikacji
+            - Ujednolicenie oraz aktualizacja ikon interfejsu użytkownika
+            - Usprawnienia nawigacji i działania wybranych widoków
+            - Optymalizacja wydajności aplikacji
+            - Usprawnienie cennika
+            ---
+            ### ⚠️ Informacja o podpisie cyfrowym (SmartScreen / macOS Gatekeeper)
+
+            Aplikacja jest darmowym projektem o otwartym kodzie źródłowym i **nie posiada płatnego podpisu cyfrowego**.
+            Z tego powodu Twój system operacyjny może wyświetlić ostrzeżenie podczas pierwszego uruchomienia:
+
+            * **Windows (SmartScreen):** Kliknij `Więcej informacji` -> `Uruchom mimo to`.
+            * **macOS:** Kliknij prawym przyciskiem myszy na aplikację i wybierz `Otwórz`, a następnie zatwierdź uruchomienie w Ustawieniach systemowych (Bezpieczeństwo).
+            * **Kod źródłowy:** Cały kod jest w pełni jawny i dostępny do wglądu w tym repozytorium – aplikacja jest w 100% bezpieczna.

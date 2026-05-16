@@ -2,6 +2,7 @@ import sqlite3
 import datetime
 import re
 from PySide6 import QtWidgets, QtCore
+from modules.cennik import CennikDialog, polacz_uslugi_z_naprawa
 from modules.odswiez_tabele import odswiez_tabele
 from PySide6.QtWidgets import QCompleter
 from PySide6.QtCore import QStringListModel
@@ -365,10 +366,6 @@ class CopyableTextEdit(QtWidgets.QTextEdit):
         copy_all_action.triggered.connect(lambda: QtWidgets.QApplication.clipboard().setText(self.toPlainText()))
         menu.exec(self.mapToGlobal(pos))
 
-import sqlite3
-import re
-from PySide6 import QtWidgets, QtCore
-
 def _wspolna_logika_okna(conn: sqlite3.Connection, cursor: sqlite3.Cursor, id_num, parent, odswiez_funkcja):
     """Jeden, wspólny dialog zawierający absolutnie wszystkie pola z obu pierwotnych funkcji."""
     z = cursor.execute("SELECT * FROM zlecenia WHERE id=?", (id_num,)).fetchone()
@@ -385,7 +382,7 @@ def _wspolna_logika_okna(conn: sqlite3.Connection, cursor: sqlite3.Cursor, id_nu
 
     dialog = QtWidgets.QDialog(parent)
     dialog.setWindowTitle(_("Dane zlecenia {id}").format(id=id_formatted))
-    dialog.resize(500, 650) # Stały, zgrabny rozmiar
+    dialog.setFixedSize(570, 670) # Stały, zgrabny rozmiar
     layout = QtWidgets.QFormLayout(dialog)
 
     # --- LOGIKA UPRAWNIEŃ ---
@@ -409,18 +406,29 @@ def _wspolna_logika_okna(conn: sqlite3.Connection, cursor: sqlite3.Cursor, id_nu
     opis.setTabChangesFocus(True)
 
     uwagi = CopyableTextEdit(z[6] or "")
-    uwagi.setFixedHeight(150) # Oryginał z popraw_dane
+    uwagi.setFixedHeight(120) # Oryginał z popraw_dane
     uwagi.setTabChangesFocus(True)
 
     naprawa_val = z[colnames.index("naprawa_opis")] if "naprawa_opis" in colnames else ""
     naprawa = CopyableTextEdit(naprawa_val or "")
-    naprawa.setFixedHeight(60) # Oryginał z pokaz_szczegoly
+    naprawa.setFixedHeight(100) # Oryginał z pokaz_szczegoly
     naprawa.setTabChangesFocus(True)
 
     koszt_cz_val = z[colnames.index("koszt_czesci")] if "koszt_czesci" in colnames else 0.0
     koszt_us_val = z[colnames.index("koszt_uslugi")] if "koszt_uslugi" in colnames else 0.0
     koszt_cz_edit = CopyableLineEdit(f"{float(koszt_cz_val or 0.0):.2f}")
     koszt_us_edit = CopyableLineEdit(f"{float(koszt_us_val or 0.0):.2f}")
+
+    def dodaj_uslugi_do_formularza(wybrane_uslugi):
+        """Aktualizuje pola naprawy i kosztu usługi na podstawie usług z cennika."""
+        nowa_naprawa, nowy_koszt = polacz_uslugi_z_naprawa(
+            naprawa.toPlainText(),
+            koszt_us_edit.text(),
+            wybrane_uslugi
+        )
+        naprawa.setPlainText(nowa_naprawa)
+        koszt_us_edit.setText(f"{nowy_koszt:.2f}")
+        return True
 
     # --- UKŁAD FORMULARZA ---
     layout.addRow(_("Imię i Nazwisko:"), imie)
@@ -430,18 +438,52 @@ def _wspolna_logika_okna(conn: sqlite3.Connection, cursor: sqlite3.Cursor, id_nu
     layout.addRow(_("Nr seryjny:"), nr_seryjny)
     layout.addRow(_("Opis:"), opis)
     layout.addRow(_("Uwagi:"), uwagi)
-    layout.addRow(_("Naprawa:"), naprawa)
+
+    naprawa_wrapper = QtWidgets.QWidget()
+    naprawa_wrapper_layout = QtWidgets.QHBoxLayout(naprawa_wrapper)
+    naprawa_wrapper_layout.setContentsMargins(0, 0, 0, 0)
+    naprawa_wrapper_layout.setSpacing(8)
+
+    naprawa_wrapper_layout.addWidget(naprawa, 1)
+
+    btn_wybierz_naprawe = QtWidgets.QPushButton(_("Wybierz\nUsługę\nz Cennika"))
+    btn_wybierz_naprawe.setFixedWidth(85)
+    btn_wybierz_naprawe.setFixedHeight(80)
+
+    btn_wybierz_naprawe.setSizePolicy(
+        QtWidgets.QSizePolicy.Policy.Fixed,
+        QtWidgets.QSizePolicy.Policy.Fixed
+    )
+
+    btn_wybierz_naprawe.setCursor(QtCore.Qt.CursorShape.PointingHandCursor)
+    btn_wybierz_naprawe.clicked.connect(
+        lambda: CennikDialog(
+            parent=dialog,
+            order_label=id_formatted,
+            service_apply_callback=dodaj_uslugi_do_formularza
+        ).exec()
+    )
+
+    naprawa_wrapper_layout.addWidget(btn_wybierz_naprawe, 0)
+
+    naprawa_wrapper.setFixedHeight(80)
+    naprawa_wrapper.setSizePolicy(
+        QtWidgets.QSizePolicy.Policy.Expanding,
+        QtWidgets.QSizePolicy.Policy.Fixed
+    )
+
+    layout.addRow(_("Naprawa:"), naprawa_wrapper)
+
     layout.addRow(_("Koszt Części:"), koszt_cz_edit)
     layout.addRow(_("Koszt Usługi:"), koszt_us_edit)
 
-    # --- SEKCOJA SUMY (ZGRABNA, NIE ROZWLACZONA) ---
     suma_container = QtWidgets.QWidget()
     suma_h_layout = QtWidgets.QHBoxLayout(suma_container)
     suma_h_layout.setContentsMargins(0, 0, 0, 0)
     suma_label = QtWidgets.QLabel()
     suma_label.setStyleSheet("font-weight: bold; font-size: 14px; color: #2e7d32;")
     suma_h_layout.addWidget(suma_label)
-    suma_h_layout.addStretch() # Spycha tekst do lewej
+    suma_h_layout.addStretch()
 
     def update_suma():
         """Aktualizuje stan danych lub interfejsu."""
@@ -454,9 +496,18 @@ def _wspolna_logika_okna(conn: sqlite3.Connection, cursor: sqlite3.Cursor, id_nu
     koszt_cz_edit.textChanged.connect(update_suma)
     koszt_us_edit.textChanged.connect(update_suma)
     update_suma()
+
+    # Dodajemy wiersz do layoutu
     layout.addRow(_("Razem:"), suma_container)
 
-    # --- CHECKBOXY I DODATKI ---
+    # --- TO SĄ TE DWIE LINIJKI BLOKADY, O KTÓRE PROSIŁEŚ ---
+    suma_container.setFixedHeight(25)  # Blokujemy wysokość kwoty
+
+    label_razem = layout.labelForField(suma_container)
+    if label_razem:
+        label_razem.setFixedHeight(25)  # Blokujemy wysokość etykiety "Razem:"
+
+    # --- CHECKBOXY I DODATKI (Oryginalne, bez zmian) ---
     checkbox_layout = QtWidgets.QHBoxLayout()
     chk_akcesoria = QtWidgets.QCheckBox(_("Akcesoria"))
     chk_gwarancja = QtWidgets.QCheckBox(_("Gwarancja"))
@@ -467,10 +518,11 @@ def _wspolna_logika_okna(conn: sqlite3.Connection, cursor: sqlite3.Cursor, id_nu
 
     akcesoria_input = QtWidgets.QLineEdit()
     akcesoria_input.setPlaceholderText(_("Wpisz jakie akcesoria..."))
+    akcesoria_input.setFixedHeight(26)
+    akcesoria_input.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Fixed)
     akcesoria_input.hide()
     layout.addRow(_("Akcesoria (opis):"), akcesoria_input)
     chk_akcesoria.stateChanged.connect(lambda _: akcesoria_input.setVisible(chk_akcesoria.isChecked()))
-
     # --- WCZYTYWANIE FLAG Z BAZY ---
     opis_full = z[5] or ""
     acc_label = _("Akcesoria:")
@@ -493,6 +545,7 @@ def _wspolna_logika_okna(conn: sqlite3.Connection, cursor: sqlite3.Cursor, id_nu
             w.setReadOnly(True)
             w.setStyleSheet("background-color: #f5f5f5; color: #666;")
         for c in [chk_akcesoria, chk_gwarancja, chk_rkj, chk_pilne]: c.setEnabled(False)
+        btn_wybierz_naprawe.setEnabled(False)
 
     btn_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.StandardButton.Ok |
                                          QtWidgets.QDialogButtonBox.StandardButton.Cancel)

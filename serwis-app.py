@@ -7,22 +7,13 @@ import sys
 import gettext
 import locale
 
-app_id = "serwis-app"
-
-basedir = os.path.dirname(__file__)
-icon_path = os.path.join(basedir, "serwisapp.png")
-
-# --- 1. USTALANIE ŚCIEŻKI BAZOWEJ (Wersja pod ONEDIR) ---
 if getattr(sys, 'frozen', False):
-    # W trybie --onedir ścieżka bazowa to katalog, w którym leży plik .exe
     base_path = os.path.dirname(sys.executable)
 else:
-    # W trybie deweloperskim (uruchamianie z pliku .py)
     base_path = os.path.dirname(os.path.abspath(__file__))
 
 locales_dir = os.path.join(base_path, 'locales')
 
-# --- 2. JĘZYK SYSTEMU ---
 system_lang = 'en'
 try:
     lang_code, encoding = locale.getlocale()
@@ -35,7 +26,6 @@ except Exception:
 
 lang = 'pl' if system_lang and str(system_lang).lower().startswith('pl') else 'en'
 
-# --- 3. INICJALIZACJA TŁUMACZEŃ ---
 _ = lambda s: s
 
 try:
@@ -43,31 +33,28 @@ try:
     t.install()
     _ = t.gettext
 except FileNotFoundError:
-    # Opcjonalnie: odkomentuj print poniżej, aby widzieć w konsoli czy folder został znaleziony
-    # print(f"Nie znaleziono tłumaczeń w: {locales_dir}")
     pass
 except Exception as e:
     print(f"Błąd ładowania tłumaczeń: {e}")
 
 from PySide6 import QtCore, QtGui, QtWidgets
-from PySide6.QtGui import QShortcut, QKeySequence, QIcon, QStandardItemModel
+from PySide6.QtGui import QIcon, QStandardItemModel
 from PySide6.QtCore import QTranslator, QLocale, QLibraryInfo, QTimer, QDate
 from PySide6.QtWidgets import QMainWindow
 
 from setup import config
 from modules.backup import Ui_MainWindow as BackupUi, wykonaj_backup_logika
-from modules.button import MyPushButton
+from modules.cennik import CennikDialog, polacz_uslugi_z_naprawa
 from modules.drukowanie import drukuj_zlecenie_html
 from modules.odswiez_tabele import odswiez_tabele
-# Importujemy nowe funkcje: menedżera i sprawdzanie przy starcie
 from modules.password_protection import sprawdz_haslo_przy_starcie
 from modules.zlecenia import (
     dodaj_zlecenie, pokaz_szczegoly, popraw_dane
 )
 from modules import startup_popup
 from ui.ui_main import Ui_MainWindow
-from modules.utils import resource_path, formatuj_numer_zlecenia
-from modules.baza import init_baza, wybierz_baze_dialog, zapisz_filtr, wczytaj_filtr, wczytaj_baze
+from modules.utils import formatuj_numer_zlecenia, get_app_icon_path, get_app_logo_path, resource_path
+from modules.baza import init_baza, wybierz_baze_dialog, wczytaj_filtr, wczytaj_baze
 from modules.labele import pokaz_szczegoly_w_labelach
 from modules.firma import edytuj_dane_firmy
 from modules.date_filter import DateFilterPopup
@@ -83,6 +70,13 @@ class SerwisAppWindow(QMainWindow):
         # W __init__ klasy MainWindow:
         sprawdz_haslo_przy_starcie(self) # To wywoła nowe okno logowania (combo box z użytkownikami)
         self.ui.setupUi(self)
+        self.ui.tableView.installEventFilter(self)
+        self.setup_footer()
+        self.update_plus_status() # Pierwsze załadowanie danych stopki
+        self.mail_okno = None
+        self.sms_okno = None
+        self.backup_window = None
+        self.klienci_window = None
 
         # --- OBSŁUGA DATY ---
         # 1. Wywołujemy raz, żeby data pojawiła się natychmiast po uruchomieniu
@@ -143,6 +137,21 @@ class SerwisAppWindow(QMainWindow):
                     self.ui.tableView.setColumnWidth(col, new_w)
 
         self.ui.tableView.resizeEvent = smart_resize
+
+    def eventFilter(self, source, event):
+        """Przechwytuje wciśnięcie klawisza Enter na tabeli i otwiera szczegóły."""
+        from PySide6.QtCore import Qt, QEvent
+
+        if source is self.ui.tableView and event.type() == QEvent.KeyPress:
+            # Sprawdzamy oba klawisze Enter (zwykły Return i ten z klawiatury numerycznej Enter)
+            if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+                current_index = self.ui.tableView.currentIndex()
+                if current_index.isValid():
+                    # Wywołujemy dokładnie tę samą funkcję, co przy podwójnym kliknięciu
+                    otworz_szczegoly(current_index)
+                    return True # Informujemy system, że obsłużyliśmy ten klawisz i ma go ignorować
+
+        return super().eventFilter(source, event)
 
     def update_datetime(self):
         """Aktualizuje etykietę daty w głównym oknie"""
@@ -274,6 +283,7 @@ class SerwisAppWindow(QMainWindow):
 
                     progress.setValue(100)
 
+
         # --- CZĘŚĆ 2: ZAPIS USTAWIEŃ ---
 
         self.save_window_settings()
@@ -281,6 +291,129 @@ class SerwisAppWindow(QMainWindow):
         zapisz_stan_i_motyw()
 
         event.accept()
+
+    def setup_footer(self):
+        """Buduje nowoczesną stopkę Lux Style i umieszcza ją bezpośrednio w systemowym pasku stanu."""
+        from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel
+        from PySide6.QtCore import Qt
+        import datetime
+        from setup import config
+
+        # 1. Ukrywamy domyślny styl paska stanu (usuwamy brzydki uchwyt zmiany rozmiaru w rogu, jeśli jest)
+        self.ui.statusbar.setSizeGripEnabled(False)
+
+        # Usuwamy wewnętrzne marginesy paska stanu, żeby stopka idealnie do niego przylegała
+        self.ui.statusbar.setStyleSheet("QStatusBar { background: transparent; } QStatusBar::item { border: none; }")
+
+        # 2. Tworzymy główny kontener stopki
+        self.footer_widget = QWidget(self)
+        self.footer_widget.setFixedHeight(26) # Nieco niższa, żeby idealnie pasowała do statusbaru
+
+        footer_layout = QHBoxLayout(self.footer_widget)
+        # Zerujemy marginesy pionowe, aby stopka nie była ucięta w małej belce
+        footer_layout.setContentsMargins(10, 0, 10, 5)
+
+        # Wspólny minimalistyczny styl (Lux Style)
+        self.footer_badge_style = (
+            "QLabel { font-size: 11px; font-weight: bold; color: gray; "
+            "padding: 0px 8px; border: 1px solid #bdc3c7; border-radius: 4px; "
+            "background-color: transparent; }"
+        )
+
+        # 3. Wersja aplikacji
+        self.lbl_version = QLabel(f"v{config.APP_VERSION}")
+        self.lbl_version.setStyleSheet(self.footer_badge_style)
+
+        # 4. Tytuł sekcji bazy
+        lbl_base_title = QLabel(_("Status Bazy:"))
+        lbl_base_title.setStyleSheet("font-size: 10px; font-weight: bold; color: gray;")
+
+        # 5. Plakietka statusu bazy i nazwy firmy
+        self.lbl_base_status = QLabel()
+        self.lbl_base_status.setStyleSheet(self.footer_badge_style)
+
+        # 6. Prawa autorskie z dynamicznym rokiem
+        curr_year = datetime.date.today().year
+        year_str = f"2025-{curr_year}" if curr_year > 2025 else "2025"
+
+        lbl_copy = QLabel(f"© KlapkiSzatana {year_str}")
+        lbl_copy.setStyleSheet(self.footer_badge_style)
+
+        # Układamy elementy w layoutu stopki
+        footer_layout.addWidget(self.lbl_version)
+        footer_layout.addSpacing(10)
+        footer_layout.addWidget(lbl_base_title)
+        footer_layout.addWidget(self.lbl_base_status)
+        footer_layout.addStretch(1) # Przesuwa prawa autorskie do prawej krawędzi
+        footer_layout.addWidget(lbl_copy)
+
+        # --- KLUCZOWA ZMIANA ---
+        # Dodajemy cały nasz przygotowany widget jako permanentny element paska stanu.
+        # Dzięki temu będzie on zawsze widoczny, idealnie wyrównany i osadzony na samej dolnej belce!
+        self.ui.statusbar.addPermanentWidget(self.footer_widget, 1)
+
+    def update_plus_status(self):
+        """Dynamicznie odczytuje stan bazy oraz nazwę firmy i aplikuje style do stopki."""
+        import os
+        import sqlite3
+        from setup import config
+
+        # --- 1. Ustalanie typu bazy (Lokalna vs Sieciowa) ---
+        try:
+            current_db_path = os.path.abspath(config.DB_FILE)
+            current_dir = os.path.normpath(os.path.dirname(current_db_path))
+        except Exception:
+            current_dir = ""
+
+        local_dir_raw = os.path.join(os.path.expanduser("~"), ".SerwisApp")
+        local_dir = os.path.normpath(os.path.abspath(local_dir_raw))
+
+        if os.name == 'nt':
+            is_local = (current_dir.lower() == local_dir.lower())
+        else:
+            is_local = (current_dir == local_dir)
+
+        if is_local:
+            baza_txt = _("Baza Lokalna")
+            # Styl z szarą ramką i szarym tekstem dla bazy lokalnej
+            baza_badge_style = (
+                "QLabel { font-size: 11px; font-weight: bold; color: #7f8c8d; "
+                "padding: 1px 8px; border: 1px solid #bdc3c7; border-radius: 5px; }"
+            )
+        else:
+            baza_txt = _("Baza Sieciowa")
+            # Styl z pięknym niebieskim akcentem dla bazy sieciowej (Lux Style)
+            baza_badge_style = (
+                "QLabel { font-size: 11px; font-weight: bold; color: #2980b9; "
+                "padding: 1px 8px; border: 1px solid #3498db; border-radius: 5px; }"
+            )
+
+        # --- 2. Pobieranie nazwy firmy z bazy ---
+        nazwa_firmy = _("Brak nazwy firmy")
+
+        if os.path.exists(config.DB_FILE):
+            try:
+                conn = sqlite3.connect(config.DB_FILE, timeout=5)
+                c_tmp = conn.cursor()
+                c_tmp.execute("SELECT nazwa FROM firma LIMIT 1")
+                row = c_tmp.fetchone()
+                conn.close()
+
+                if row and row[0]:
+                    nazwa_firmy = row[0]
+                else:
+                    nazwa_firmy = _("Firma (Brak nazwy w DB)")
+
+            except sqlite3.Error:
+                nazwa_firmy = _("Błąd odczytu bazy")
+            except Exception:
+                nazwa_firmy = _("Błąd systemu")
+        else:
+            nazwa_firmy = _("Plik bazy nie istnieje!")
+
+        # --- 3. Aktualizacja widoku w stopce ---
+        self.lbl_base_status.setStyleSheet(baza_badge_style)
+        self.lbl_base_status.setText(f"📂 {baza_txt} | {nazwa_firmy}")
 
 
 CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".SerwisApp", "config")
@@ -294,8 +427,7 @@ logo_dir = os.path.dirname(config.DST_LOGO_FILE)
 # Upewniamy się, że katalogi docelowe istnieją
 os.makedirs(logo_dir, exist_ok=True)
 
-# 3. Kopiowanie logo
-logo_src = resource_path("resources/logo/serwisapp.png")
+logo_src = get_app_logo_path()
 if not os.path.exists(config.DST_LOGO_FILE):
     if os.path.exists(logo_src):
         try:
@@ -303,9 +435,7 @@ if not os.path.exists(config.DST_LOGO_FILE):
         except Exception as e:
             print(f"Błąd kopiowania logo: {e}")
 
-# 4. Kopiowanie przewodnik.pdf
 przewodnik_src = resource_path("resources/szablony/przewodnik.pdf")
-# Budujemy ścieżkę docelową do głównego katalogu .SerwisApp
 przewodnik_dst = os.path.join(os.path.expanduser("~"), ".SerwisApp", "przewodnik.pdf")
 
 if not os.path.exists(przewodnik_dst):
@@ -315,25 +445,16 @@ if not os.path.exists(przewodnik_dst):
         except Exception as e:
             print(f"Błąd kopiowania przewodnik.pdf: {e}")
 
-# --- INICJALIZACJA BAZY DANYCH ---
-
-# 1. Najpierw wczytujemy zapamiętaną ścieżkę z pliku JSON
 zapamietana_sciezka = wczytaj_baze(CONFIG_BAZA_FILE, LOCAL_DB)
-
-# 2. Aktualizujemy globalną konfigurację, żeby status bar wiedział, co pokazać
-config.DB_FILE = zapamietana_sciezka  # <--- WAŻNE: Aktualizacja zmiennej globalnej
-
-# 3. Inicjalizujemy połączenie
+config.DB_FILE = zapamietana_sciezka
 conn, c = init_baza(CONFIG_BAZA_FILE, LOCAL_DB)
 
-# --- START APLIKACJI ---
-# 1. Ustawienia skalowania (zawsze przed QApplication)
 os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "0"
 os.environ["QT_SCREEN_SCALE_FACTORS"] = "1"
 os.environ["QT_SCALE_FACTOR"] = "1"
-QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_DisableHighDpiScaling)
+# W Qt6 nie ustawiamy już AA_DisableHighDpiScaling, bo atrybut jest zdeprecjonowany.
+# Skalowanie trzymamy przez zmienne środowiskowe ustawione powyżej.
 
-# 2. Wymuszenie nazw dla systemów Linux (przed stworzeniem app)
 QtCore.QCoreApplication.setOrganizationName("SerwisApp")
 QtCore.QCoreApplication.setApplicationName("serwis-app")
 
@@ -352,26 +473,14 @@ startup_popup.show_startup_if_needed()
 main_window = SerwisAppWindow()
 ui = main_window.ui
 
-shortcut_refresh = QShortcut(QKeySequence("F5"), main_window)
-shortcut_insert = QShortcut(QKeySequence("Insert"), main_window)
-shortcut_insert.activated.connect(ui.pushButtonNew_new.click)
-shortcut_delete = QShortcut(QKeySequence("Delete"), main_window)
-shortcut_delete.activated.connect(ui.pushButtonNew_del.click)
-shortcut_ctrl_p = QShortcut(QKeySequence("Ctrl+P"), main_window)
-shortcut_ctrl_p.activated.connect(ui.pushButtonNew_print.click)
-shortcut_refresh.activated.connect(lambda: odswiez_tabele_z_filtrami())
-shortcut_enter = QShortcut(QKeySequence("Return"), main_window)
-shortcut_enter.activated.connect(lambda: pokaz_szczegoly(conn, c, ui.tableView.selectionModel().currentIndex(), ui.tableView.model()))
-ui.pushButtonNew_ref.clicked.connect(lambda: odswiez_tabele_z_filtrami())
-main_window.show()
+
+#ui.pushButtonNew_ref.clicked.connect(lambda: odswiez_tabele_z_filtrami())
 
 ui.actionDaneFirmy.triggered.connect(lambda: edytuj_dane_firmy(main_window, conn))
 
-# 1. Pobieramy aktualny rok
 teraz = datetime.date.today()
 obecny_rok = str(teraz.year)
 
-# 2. Ustawiamy domyślny filtr w strukturze danych
 current_date_filter = {
     "type": "year",
     "from": f"{obecny_rok}-01-01",
@@ -380,29 +489,9 @@ current_date_filter = {
 
 ui.pushButtonNew_filter.setText(obecny_rok)
 
-main_window.setWindowTitle(f"SerwisApp - {config.APP_VERSION} {config.APP_NAME}")
-main_window.setWindowIcon(QIcon(resource_path("resources/logo/icon.png")))
-
-def replace_buttons_with_mypushbutton(ui):
-    """Realizuje logikę operacji replace buttons with mypushbutton."""
-    from modules.button import MyPushButton
-    button_names = [
-        "pushButtonNew_new", "pushButtonNew_popdane", "pushButtonNew_del",
-        "pushButtonNew_print", "pushButtonNew_end", "pushButtonNew_tryb",
-        "pushButtonNew_popfir", "pushButtonNew_backup", "pushButtonNew_baza",
-        "pushButtonNew_ref", "pushButtonNew_filter", "pushButtonNew_clients",
-    ]
-    for name in button_names:
-        old_btn = getattr(ui, name, None)
-        if old_btn is None: continue
-        parent = old_btn.parent()
-        text = old_btn.text()
-        geom = old_btn.geometry()
-        new_btn = MyPushButton(text=text, parent=parent)
-        new_btn.setGeometry(geom)
-        try: old_btn.clicked.connect(new_btn.clicked)
-        except Exception: pass
-        setattr(ui, name, new_btn)
+app_icon = QIcon(get_app_icon_path())
+main_window.setWindowTitle(f"SerwisApp")
+main_window.setWindowIcon(app_icon)
 
 app.setStyle("Fusion")
 
@@ -452,6 +541,66 @@ def get_real_id(index):
     except:
         return None
 
+def pobierz_kontekst_zaznaczonego_zlecenia():
+    """Zwraca ID i sformatowany numer aktualnie zaznaczonego zlecenia."""
+    indexes = ui.tableView.selectionModel().selectedRows()
+    if not indexes:
+        return None, ""
+
+    id_num = get_real_id(indexes[0])
+    if not id_num:
+        return None, ""
+
+    cols = [col[1] for col in c.execute("PRAGMA table_info(zlecenia)").fetchall()]
+    has_nr_roczny = "nr_roczny" in cols
+    query = "SELECT data_zlecenia"
+    if has_nr_roczny:
+        query += ", nr_roczny"
+    query += " FROM zlecenia WHERE id=?"
+    row = c.execute(query, (id_num,)).fetchone()
+
+    if not row:
+        return id_num, str(id_num)
+
+    data_zlecenia = row[0]
+    nr_roczny = row[1] if has_nr_roczny and len(row) > 1 else None
+    return id_num, formatuj_numer_zlecenia(id_num, data_zlecenia, nr_roczny)
+
+def dodaj_uslugi_do_zaznaczonego_zlecenia(wybrane_uslugi):
+    """Dopisuje usługi z cennika do zaznaczonego zlecenia."""
+    id_num, _numer_zlecenia = pobierz_kontekst_zaznaczonego_zlecenia()
+    if not id_num:
+        QtWidgets.QMessageBox.warning(main_window, _("Uwaga"), _("Zaznacz zlecenie, do którego chcesz dodać usługę."))
+        return False
+
+    z = c.execute("SELECT * FROM zlecenia WHERE id=?", (id_num,)).fetchone()
+    if not z:
+        QtWidgets.QMessageBox.warning(main_window, _("Błąd"), _("Nie znaleziono zlecenia w bazie."))
+        return False
+
+    colnames = [desc[0] for desc in c.description]
+    naprawa_val = z[colnames.index("naprawa_opis")] if "naprawa_opis" in colnames else ""
+    koszt_us_val = z[colnames.index("koszt_uslugi")] if "koszt_uslugi" in colnames else 0.0
+    nowa_naprawa, nowy_koszt = polacz_uslugi_z_naprawa(naprawa_val, koszt_us_val, wybrane_uslugi)
+
+    c.execute(
+        "UPDATE zlecenia SET naprawa_opis=?, koszt_uslugi=? WHERE id=?",
+        (nowa_naprawa, nowy_koszt, id_num)
+    )
+    conn.commit()
+    odswiez_tabele_z_filtrami()
+    return True
+
+def otworz_cennik():
+    """Otwiera wspólne okno cennika."""
+    id_num, numer_zlecenia = pobierz_kontekst_zaznaczonego_zlecenia()
+    dialog = CennikDialog(
+        parent=main_window,
+        order_label=numer_zlecenia if id_num else "",
+        service_apply_callback=dodaj_uslugi_do_zaznaczonego_zlecenia if id_num else None
+    )
+    dialog.exec()
+
 def otworz_filtr_daty():
     """Otwiera wskazane okno lub akcję."""
     global current_date_filter
@@ -484,13 +633,6 @@ def odswiez_tabele_z_filtrami():
         date_to=d_to
     )
 
-def ustaw_filtr(filtr):
-    """Realizuje logikę operacji ustaw filtr."""
-    zapisz_filtr(filtr)
-    if filtr == "Przyjęte": odswiez_tabele(c, model, status_filter="Przyjęte")
-    elif filtr == "Ukończone": odswiez_tabele(c, model, status_filter="Ukończone")
-    else: odswiez_tabele(c, model, status_filter=None)
-
 def otworz_szczegoly(index):
     """Otwiera wskazane okno lub akcję."""
     if not index.isValid():
@@ -507,17 +649,25 @@ def otworz_szczegoly(index):
 
 def otworz_backup():
     """Otwiera wskazane okno lub akcję."""
-    global backup_window
-    backup_window = QtWidgets.QMainWindow()
+    if main_window.backup_window:
+        main_window.backup_window.raise_()
+        main_window.backup_window.activateWindow()
+        return
+
+    backup_window = QtWidgets.QMainWindow(main_window)
+    backup_window.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
+    backup_window.setWindowIcon(QIcon(get_app_icon_path()))
     ui_backup = BackupUi()
     ui_backup.setupUi(backup_window)
+    backup_window.destroyed.connect(lambda: setattr(main_window, "backup_window", None))
+    main_window.backup_window = backup_window
     backup_window.show()
 
 def otworz_klienci():
     """Otwiera wskazane okno lub akcję."""
-    global klienci_window
-    klienci_window = KlienciWindow(main_window, conn, model, ui)
-    klienci_window.exec()
+    main_window.klienci_window = KlienciWindow(main_window, conn, model, ui)
+    main_window.klienci_window.exec()
+    main_window.klienci_window = None
 
 def drukuj_wybrane_zlecenie():
     """Przygotowuje i wykonuje wydruk."""
@@ -775,6 +925,8 @@ def pokaz_menu_kontekstowe(pos):
             odswiez_tabele_z_filtrami()
             from modules.mail import MailClient
             main_window.mail_okno = MailClient(email_klienta, nr_zlecenia_str, sprzet, dane_firmy)
+            main_window.mail_okno.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
+            main_window.mail_okno.destroyed.connect(lambda: setattr(main_window, "mail_okno", None))
             main_window.mail_okno.show()
         except Exception as e:
             QtWidgets.QMessageBox.critical(main_window, _("Błąd"), f"Błąd przygotowania maila: {e}")
@@ -815,6 +967,8 @@ def pokaz_menu_kontekstowe(pos):
 
         # Otwarcie okna SMS
         main_window.sms_okno = SMSClient(telefon, nr_zlecenia_str, sprzet)
+        main_window.sms_okno.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
+        main_window.sms_okno.destroyed.connect(lambda: setattr(main_window, "sms_okno", None))
         main_window.sms_okno.show()
 
 ui.tableView.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
@@ -822,6 +976,7 @@ ui.tableView.customContextMenuRequested.connect(pokaz_menu_kontekstowe)
 
 ui.tableView.selectionModel().selectionChanged.connect(lambda selected, deselected: pokaz_szczegoly_w_labelach(ui, c, selected, deselected))
 
+ui.actionPokazCennik.triggered.connect(otworz_cennik)
 ui.radioButton_all.toggled.connect(lambda: odswiez_tabele_z_filtrami())
 ui.radioButton_end.toggled.connect(lambda: odswiez_tabele_z_filtrami())
 ui.radioButton_new.toggled.connect(lambda: odswiez_tabele_z_filtrami())
@@ -842,49 +997,103 @@ ui.pushButtonNew_backup.clicked.connect(otworz_backup)
 ui.pushButtonNew_print.clicked.connect(drukuj_wybrane_zlecenie)
 ui.pushButtonNew_del.clicked.connect(usun_zlecenie)
 ui.pushButtonNew_clients.clicked.connect(otworz_klienci)
-
 def on_baza_clicked():
     """Obsługuje zmianę stanu lub zdarzenie interfejsu."""
-    global conn, c, db_file_path
+    global conn, c
 
-    # 1. Wywołanie dialogu wyboru
+    # 1. Wywołanie dialogu wyboru bazy
+    # Upewniamy się, że przekazujemy 'main_window' jako parent
     db_file_path = wybierz_baze_dialog(main_window, CONFIG_BAZA_FILE, LOCAL_DB)
 
     if db_file_path is None:
-        return
+        return # Użytkownik anulował wybór
 
     # 2. Zamknięcie starego połączenia
+    try:
+        conn.close()
+    except Exception as e:
+        print(f"Błąd zamykania starego połączenia: {e}")
+
+    # 3. Aktualizacja konfiguracji globalnej
+    from setup import config
+    config.DB_FILE = db_file_path
+
+    # 4. Nowe połączenie z wybraną bazą
+    try:
+        conn = sqlite3.connect(db_file_path)
+        c = conn.cursor()
+    except Exception as e:
+        QtWidgets.QMessageBox.critical(main_window, _("Błąd"), f"Nie udało się połączyć z bazą:\n{e}")
+        return
+
+    # 5. Odświeżenie widoku tabeli
+    odswiez_tabele_z_filtrami()
+
+    # 6. NOWE: Odświeżenie naszej nowej stopki w oknie głównym!
+    main_window.update_plus_status()
+
+ui.pushButtonNew_baza.clicked.connect(on_baza_clicked)
+
+app.setWindowIcon(app_icon)
+main_window.show()
+
+_cleanup_done = False
+
+def cleanup_before_exit():
+    """Domyka zasoby przed zakończeniem procesu."""
+    global _cleanup_done, conn, c
+    if _cleanup_done:
+        return
+    _cleanup_done = True
+
+    try:
+        if hasattr(main_window, "date_timer") and main_window.date_timer.isActive():
+            main_window.date_timer.stop()
+    except Exception:
+        pass
+
+    for attr_name in ("mail_okno", "sms_okno", "backup_window", "klienci_window"):
+        widget = getattr(main_window, attr_name, None)
+        if not widget:
+            continue
+        try:
+            widget.close()
+        except Exception:
+            pass
+        try:
+            widget.deleteLater()
+        except Exception:
+            pass
+        setattr(main_window, attr_name, None)
+
+    try:
+        ui.tableView.setModel(None)
+    except Exception:
+        pass
+
+    try:
+        conn.commit()
+    except Exception:
+        pass
+
     try:
         conn.close()
     except Exception:
         pass
 
-    # 3. Aktualizacja konfiguracji globalnej (KLUCZOWE DLA ODŚWIEŻANIA STATUSU)
-    config.DB_FILE = db_file_path
+    conn = None
+    c = None
 
-    # 4. Nowe połączenie
-    conn = sqlite3.connect(db_file_path)
-    c = conn.cursor()
+app.aboutToQuit.connect(cleanup_before_exit)
 
-    # 5. Odświeżenie widoku tabeli
-    odswiez_tabele(c, model, status_filter=None)
+exit_code = app.exec()
+cleanup_before_exit()
 
-    ui.update_plus_status()
+try:
+    sys.stdout.flush()
+    sys.stderr.flush()
+except Exception:
+    pass
 
-# Obliczamy rok
-curr_year = datetime.date.today().year
-year_str = f"2025-{curr_year}" if curr_year > 2025 else "2025"
-
-copyright_label = QtWidgets.QLabel(f"© KlapkiSzatana {year_str}")
-font = QtGui.QFont()
-font.setPointSize(8)
-font.setBold(False)
-copyright_label.setFont(font)
-copyright_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-ui.statusbar.addPermanentWidget(copyright_label)
-
-ui.pushButtonNew_baza.clicked.connect(on_baza_clicked)
-
-app.setWindowIcon(QIcon(icon_path))
-main_window.show()
-sys.exit(app.exec())
+# Workaround na sporadyczny crash PySide/Qt przy teardown interpretera.
+os._exit(int(exit_code))

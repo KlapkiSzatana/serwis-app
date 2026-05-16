@@ -2,45 +2,27 @@
 import os
 import random
 from PySide6 import QtWidgets, QtCore, QtGui
+from modules.utils import get_app_logo_path, resource_path
 
-# Zabezpieczenie na wypadek uruchamiania modułu niezależnie
 try:
     _("Test")
 except NameError:
     def _(text):
-        """Zwraca tekst bez tłumaczenia, gdy mechanizm i18n nie jest aktywny."""
         return text
 
-# Prosta funkcja do ścieżek do ikon
-# --- POPRAWIONA FUNKCJA ŚCIEŻEK ---
 def get_img(name):
-    # Ustalamy ścieżkę do katalogu, w którym znajduje się ten plik (modules/)
-    """Zwraca wymagane dane lub ustawienia."""
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    # Wychodzimy folder wyżej do głównego katalogu aplikacji i wchodzimy do actions/
-    base_path = os.path.join(current_dir, "..", "actions")
+    for relative_path in (f"actions/{name}", name):
+        full_path = resource_path(relative_path)
+        if os.path.exists(full_path):
+            return full_path
+    return resource_path(f"actions/{name}")
 
-    # Jeśli plik nie istnieje (np. w specyficznych warunkach instalacji),
-    # próbujemy ścieżki absolutnej używanej w Linux
-    full_path = os.path.normpath(os.path.join(base_path, name))
-
-    if not os.path.exists(full_path):
-        # Ostatnia szansa: sprawdzamy standardową lokalizację systemową
-        system_path = f"/usr/share/serwis-app/actions/{name}"
-        if os.path.exists(system_path):
-            return system_path
-
-    return full_path
-
-# --- ŚCIEŻKI DO NAJWYŻSZYCH WYNIKÓW ---
 def get_highscore_path():
-    """Zwraca wymagane dane lub ustawienia."""
     dir_path = os.path.expanduser("~/.SerwisApp")
     os.makedirs(dir_path, exist_ok=True)
     return os.path.join(dir_path, "highscore.txt")
 
 def get_highscore_snake_path():
-    """Zwraca wymagane dane lub ustawienia."""
     dir_path = os.path.expanduser("~/.SerwisApp")
     os.makedirs(dir_path, exist_ok=True)
     return os.path.join(dir_path, "highscore_snake.txt")
@@ -71,8 +53,8 @@ class GameSelectionDialog(QtWidgets.QDialog):
 
         # Panel przycisków wyboru
         btn_layout = QtWidgets.QHBoxLayout()
-        self.btn_mario = QtWidgets.QPushButton("Serwis Mario")
-        self.btn_snake = QtWidgets.QPushButton("Klasyczny Snake")
+        self.btn_mario = QtWidgets.QPushButton("Serwis Hopka")
+        self.btn_snake = QtWidgets.QPushButton("Serwis Snake")
 
         button_style = """
             QPushButton {
@@ -137,7 +119,7 @@ class SerwisMarioDialog(QtWidgets.QDialog):
     def __init__(self, parent=None):
         """Inicjalizuje obiekt i przygotowuje jego stan początkowy."""
         super().__init__(parent)
-        self.setWindowTitle("Serwis Mario - Przechwyć zlecenia!")
+        self.setWindowTitle("Serwis Hopka - Przechwyć zlecenia!")
         self.setFixedSize(800, 400)
         # --- ZMIANA: Lekko ciemniejsze niebo (Stalowo-Niebieskie) ---
         self.setStyleSheet("background-color: #1C2833;")
@@ -164,13 +146,12 @@ class SerwisMarioDialog(QtWidgets.QDialog):
         self.highscore = self.load_highscore()
         self.game_over = False
 
-        # --- ZMIANA: Lista ikon (usunieto te suspected of having green) ---
         self.standard_icons = [
             "client.png", "firma.png", "baza.png",
             "kopiuj.png", "smsconf.png", "email.png",
-            " template.png", "all.png", "actualizacja.png",
-            "aktywacja.png", "detale.png", "duplikuj.png",
-            "edycja.png"
+            "template.png", "all.png", "actualizacja.png",
+            "aktywacja.png", "details.png", "duplikuj.png",
+            "edit.png"
         ]
 
         self.init_game()
@@ -206,12 +187,7 @@ class SerwisMarioDialog(QtWidgets.QDialog):
 
         self.scene.addRect(0, self.ground_y + 40, 800, 60, QtGui.QPen(QtCore.Qt.NoPen), QtGui.QBrush(QtGui.QColor("#228B22")))
 
-        # Poprawiona ścieżka do ikonki głównej (często jest w resources lub actions)
-        player_img = get_img("serwisapp.png")
-        if not os.path.exists(player_img):
-            # Fallback jeśli w actions nie ma ikony głównej
-            player_img = get_img("../resources/logo/serwisapp.png")
-
+        player_img = get_app_logo_path()
         pixmap_player = QtGui.QPixmap(player_img).scaled(40, 40, QtCore.Qt.AspectRatioMode.KeepAspectRatio, QtCore.Qt.TransformationMode.SmoothTransformation)
         self.player = self.scene.addPixmap(pixmap_player)
         self.player.setPos(50, self.ground_y)
@@ -371,7 +347,7 @@ class SerwisSnakeDialog(QtWidgets.QDialog):
     def __init__(self, parent=None):
         """Inicjalizuje obiekt i przygotowuje jego stan początkowy."""
         super().__init__(parent)
-        self.setWindowTitle("Klasyczny Snake - Zjadaj Robale!")
+        self.setWindowTitle("Serwis Snake - Zjadaj Robale!")
         self.setFixedSize(800, 400)
         # Zdecydowanie ciemniejsze tło dla lepszego kontrastu
         self.setStyleSheet("background-color: #1C2833;")

@@ -1,8 +1,8 @@
 # Maintainer: KlapkiSzatana
 pkgname=serwis-app
-pkgver=2.3.2
+pkgver=3.0.0
 pkgrel=1
-pkgdesc="Proste Prowadzenie Serwisu - Kompleksowe zarządzanie serwisem"
+pkgdesc="Proste Prowadzenie Serwisu"
 arch=('any')
 url="https://github.com/KlapkiSzatana/serwis-app"
 license=('GPL-3.0')
@@ -10,41 +10,30 @@ license=('GPL-3.0')
 depends=('python' 'pyside6' 'python-cryptography' 'python-pillow' 'python-requests')
 optdepends=('python-barcode: obsługa kodów kreskowych na wydrukach')
 
-# Wymieniamy tylko PLIKI. Foldery zostaną skopiowane bezpośrednio z katalogu roboczego.
 source=("serwis-app.py"
-        "serwisapp.png"
-        "icon.png")
+        "serwisapp.png")
 
-# Teraz updpkgsums zadziała, bo widzi tylko te 3 pliki
-sha256sums=('4ec770445bcafbc733f7d421cf6f5df2706ae1b2b904c4c204ad1e2c713b0bb7'
-            '9526fdc68baa6a9445ae59a91f633a73c5787a416d99c89085b222d6e5804e0e'
-            'fb0a5349e2be3d9fc051c0768c03a30008fd422025eddc838c05b4d9d5af0c03')
+sha256sums=('d340b8cf38f05a1f252313f6ef30b10c2ac45b8ecf63b2d2f701f6a9b4cb7e34'
+            '4e98f7e73d667f695ef6430db3c1877f47b76ad504fd3a1eba69937ac047ff72')
 
 package() {
     install -d "${pkgdir}/usr/share/${pkgname}"
 
-    # 1. Instalacja plików głównych z ${srcdir}
     install -m644 "${srcdir}/serwis-app.py" "${pkgdir}/usr/share/${pkgname}/"
     install -m644 "${srcdir}/serwisapp.png" "${pkgdir}/usr/share/${pkgname}/"
-    install -m644 "${srcdir}/icon.png" "${pkgdir}/usr/share/${pkgname}/"
 
-    # 2. Instalacja wszystkich podkatalogów bezpośrednio z folderu budowania (${startdir})
-    # To rozwiązuje problem "nie znaleziono w źródłach"
     for dir in actions fonts modules setup ui resources; do
         if [ -d "${startdir}/${dir}" ]; then
             cp -r "${startdir}/${dir}" "${pkgdir}/usr/share/${pkgname}/"
         fi
     done
 
-    # 3. Czyszczenie i uprawnienia
     find "${pkgdir}/usr/share/${pkgname}" -type d -name '__pycache__' -prune -exec rm -r {} +
     find "${pkgdir}/usr/share/${pkgname}" -type d -exec chmod 755 {} +
     find "${pkgdir}/usr/share/${pkgname}" -type f -exec chmod 644 {} +
 
-    # 4. Ikona systemowa
     install -Dm644 "${srcdir}/serwisapp.png" "${pkgdir}/usr/share/pixmaps/${pkgname}.png"
 
-    # 5. Skrypt startowy
     install -d "${pkgdir}/usr/bin"
     cat <<EOF > "${pkgdir}/usr/bin/${pkgname}"
 #!/bin/sh
@@ -53,7 +42,6 @@ exec /usr/bin/python serwis-app.py "\$@"
 EOF
     chmod 755 "${pkgdir}/usr/bin/${pkgname}"
 
-    # 6. Desktop file
     install -Dm644 /dev/stdin "${pkgdir}/usr/share/applications/${pkgname}.desktop" <<EOF
 [Desktop Entry]
 Name=SerwisApp

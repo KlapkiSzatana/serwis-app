@@ -5,7 +5,6 @@ import tempfile
 
 
 def _candidate_base_paths():
-    """Realizuje logikę operacji candidate base paths."""
     candidates = []
 
     if getattr(sys, "frozen", False):
@@ -30,8 +29,8 @@ def _candidate_base_paths():
 
     return candidates
 
+
 def resource_path(relative_path):
-    """Realizuje logikę operacji resource path."""
     candidates = _candidate_base_paths()
 
     for base_path in candidates:
@@ -40,6 +39,24 @@ def resource_path(relative_path):
             return candidate
 
     return os.path.join(candidates[0], relative_path)
+
+
+def get_app_icon_name(platform=None):
+    platform = platform or sys.platform
+    if platform.startswith("win"):
+        return "serwisapp.ico"
+    if platform == "darwin":
+        return "serwisapp.icns"
+    return "serwisapp.png"
+
+
+def get_app_icon_path(platform=None):
+    return resource_path(get_app_icon_name(platform))
+
+
+def get_app_logo_path():
+    return resource_path("serwisapp.png")
+
 
 def formatuj_numer_zlecenia(id_db, data_str, nr_roczny_db=None):
     """

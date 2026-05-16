@@ -87,16 +87,17 @@ class StartupPopup(QDialog):
             "<h3 align='center'>Co nowego w wersji {version}?</h3>"
             "<p align='center'>"
             "<b>🔥 Najważniejsze zmiany:</b><br>"
-            "• <b>Wizualny edytor wydruków</b> – możliwość pełnej edycji szablonu.<br>"
-            "• <b>Zaawansowany filtr dat</b> – wybieranie zakresu zamiast listy.<br><br>"
+            "• <b>Poprawiony wizualny edytor wydruków</b><br>"
+            "• <b>Możliwości szybkiego zgłaszania błędów</b> – bezpośrednio przez GitHub.<br><br>"
+            "• <b>Dodanie obsługi skrótów klawiaturowych</b> – w najważniejszych sekcjach aplikacji<br><br>"
 
             "<b>🎨 Interfejs (UI):</b><br>"
-            "• Przebudowane Menu Główne i nowe okno Kontrahentów.<br>"
-            "• Odświeżone okienka informacji i usunięcie zbędnych plików.<br><br>"
+            "• Cennik zintegrowany ze zleceniem – można dodawac pozycje z niego do zlecenia.<br>"
+            "• Ujednolicone ikony aplikacji i odświeżony interfejs.<br><br>"
 
             "<b>⚙️ Silnik i Stabilność:</b><br>"
-            "• Zweryfikowane i poprawione moduły SMSAPI oraz E-mail.<br>"
-            "• Nowa logika odświeżania tabeli (większa stabilność).<br></p>"
+            "• Usunięte zbędne linie kodu.<br>"
+            "• Poprawione losowe błędy aplikacji.<br></p>"
 
             "<p align='center'><b>Miłego korzystania!</b></p>"
         ).format(
