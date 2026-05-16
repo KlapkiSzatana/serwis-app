@@ -10,36 +10,36 @@ Format oparty o standard:
 
 ---
 
-# [3.0.0] - Planned
+# [3.0.0](https://github.com/KlapkiSzatana/serwis-app/releases/tag/v3.0.0) - 2026-05-16
 
 ## ✨ Added
-- Planowane dodanie obsługi skrótów klawiaturowych w najważniejszych sekcjach aplikacji
-- Planowane dodanie możliwości szybkiego zgłaszania błędów bezpośrednio przez GitHub
-- Planowane usprawnienia i poprawki nowych komponentów wydruków i dokumentów
-- Planowane dodanie możliwości dodawania pozycji z cennika wraz z ceną
-- Planowane dodanie możliwości wyboru pozycji z cennika w edycji zlecenia
+- Dodanie obsługi skrótów klawiaturowych w najważniejszych sekcjach aplikacji
+- Dodanie możliwości szybkiego zgłaszania błędów bezpośrednio przez GitHub
+- Usprawnienia i poprawki nowych komponentów wydruków i dokumentów
+- Dodanie możliwości dodawania pozycji z cennika wraz z ceną
+- Dodanie możliwości wyboru pozycji z cennika w edycji zlecenia
 
 ## 🔄 Changed
-- Planowane odświeżenie wyglądu stopki aplikacji
-- Planowane ujednolicenie oraz aktualizacja ikon interfejsu użytkownika
-- Planowane usprawnienia nawigacji i działania wybranych widoków
-- Planowana optymalizacja wydajności aplikacji
-- Planowane usprawnienie cennika
+- Odświeżenie wyglądu stopki aplikacji
+- Ujednolicenie oraz aktualizacja ikon interfejsu użytkownika
+- Usprawnienia nawigacji i działania wybranych widoków
+- Optymalizacja wydajności aplikacji
+- Usprawnienie cennika
 
 ## ❌ Removed
-- Planowane usunięcie starego trybu wydruków
-- Planowane usunięcie przestarzałych elementów poprzedniego systemu dokumentów
+- Usunięcie starego trybu wydruków
+- Usunięcie przestarzałych elementów poprzedniego systemu dokumentów
 
 ## 🛠 Fixed
-- Planowane poprawki błędów związanych z interfejsem użytkownika
-- Planowane zwiększenie stabilności działania aplikacji
-- Planowane poprawki problemów występujących podczas generowania wydruków
-- Planowane poprawki drobnych błędów logicznych i wizualnych
+- Poprawki błędów związanych z interfejsem użytkownika
+- Zwiększenie stabilności działania aplikacji
+- Poprawki problemów występujących podczas generowania wydruków
+- Poprawki drobnych błędów logicznych i wizualnych
 
 ## 🧹 Technical
-- Planowana refaktoryzacja oraz porządki w kodzie aplikacji
-- Planowane uproszczenie części mechanizmów wewnętrznych
-- Planowana aktualizacja wybranych zależności projektu
+- Refaktoryzacja oraz porządki w kodzie aplikacji
+- Uproszczenie części mechanizmów wewnętrznych
+- Aktualizacja wybranych zależności projektu
 - Przygotowanie aplikacji pod kolejne większe aktualizacje
 
 ---

@@ -2,7 +2,7 @@
 
 | ID | Błąd | Priorytet | Status |
 |---|---|---|---|
-| #001 | Na wydrukach zlecenia na obu kopiach jest "Podpis Serwisu" | 📌 Średni | ⏳ W trakcie |
+| #001 | Na wydrukach zlecenia na obu kopiach jest "Podpis Serwisu" | 📌 Średni | ✅ Naprawiony |
 
 ---
 
@@ -15,4 +15,4 @@
 
 ---
 
-> Ostatnia aktualizacja: `11.05.2026`
+> Ostatnia aktualizacja: `16.05.2026`
